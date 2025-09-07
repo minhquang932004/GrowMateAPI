@@ -1,0 +1,6 @@
+@GrowMate_HostAddress = http://localhost:5019
+
+GET {{GrowMate_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
