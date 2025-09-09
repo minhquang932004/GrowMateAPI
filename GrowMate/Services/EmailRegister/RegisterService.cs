@@ -74,7 +74,7 @@ namespace GrowMate.Services.EmailRegister
             {
                 UserId = user.UserId,
                 CodeHash = BCrypt.Net.BCrypt.HashPassword(code),
-                ExpiresAt = DateTime.UtcNow.AddMinutes(10)
+                ExpiresAt = DateTime.Now.AddMinutes(10)
             };
 
             _dbContext.EmailVerifications.Add(verification);
@@ -105,13 +105,13 @@ namespace GrowMate.Services.EmailRegister
             if (verification == null)
                 return new AuthResponseDto { Success = false, Message = "No verification code found. Please request a new one." };
 
-            if (verification.ExpiresAt < DateTime.UtcNow)
+            if (verification.ExpiresAt < DateTime.Now)
                 return new AuthResponseDto { Success = false, Message = "Code expired. Please request a new code." };
 
             if (!BCrypt.Net.BCrypt.Verify(request.Code, verification.CodeHash))
                 return new AuthResponseDto { Success = false, Message = "Invalid code." };
 
-            verification.VerifiedAt = DateTime.UtcNow;
+            verification.VerifiedAt = DateTime.Now;
             user.IsActive = true;
 
             // Promote from Guest to Customer upon successful verification
@@ -125,7 +125,7 @@ namespace GrowMate.Services.EmailRegister
                 var customer = new Customer
                 {
                     CustomerId = user.UserId,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 };
                 _dbContext.Customers.Add(customer);
             }

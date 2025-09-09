@@ -33,7 +33,7 @@ namespace GrowMate.Services.Auth
                 new(ClaimTypes.Role, UserRoles.ToName(user.Role))
             };
 
-            var expiresAt = DateTime.UtcNow.AddMinutes(expiresMinutes);
+            var expiresAt = DateTime.Now.AddMinutes(expiresMinutes);
 
             var token = new JwtSecurityToken(
                 issuer: issuer,

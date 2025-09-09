@@ -1,6 +1,8 @@
 using GrowMate.Data;
 using GrowMate.Services.Auth;
 using GrowMate.Services.EmailRegister;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -21,6 +23,7 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<IRegisterService, RegisterService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<ILoginService, LoginService>();
 
 // AuthN/Z
 builder.Services.AddAuthentication(options =>
@@ -28,6 +31,7 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme) // Đăng nhập Google cần Cookie scheme để tạm giữ ClaimsPrincipal
 .AddJwtBearer(options =>
 {
     var key = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured.");
@@ -47,6 +51,13 @@ builder.Services.AddAuthentication(options =>
     };
 
     options.IncludeErrorDetails = true;
+})
+.AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+{
+    options.ClientId = builder.Configuration["Google:ClientId"];
+    options.ClientSecret = builder.Configuration["Google:ClientSecret"];
+    options.CallbackPath = "/auth/google-callback";
+    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 });
 builder.Services.AddAuthorization();
 
@@ -86,6 +97,15 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<EXE201_GrowMateContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddCors(options =>
+
+{
+    options.AddPolicy("AllowReactApp",
+        builder => builder.WithOrigins("http://localhost:5173") //Add Cors for React, url Deploy will be added later
+                          .AllowAnyMethod()
+                          .AllowCredentials() // Cookie is available
+                          .AllowAnyHeader());
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -97,7 +117,7 @@ if (app.Environment.IsDevelopment())
 
 
 app.UseHttpsRedirection();
-
+app.UseCors("AllowReactApp");
 app.UseAuthentication();
 app.UseAuthorization();
 

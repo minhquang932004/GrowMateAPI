@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using GrowMate.Models.Roles;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 
 namespace GrowMate.Controllers
 {
@@ -17,12 +21,14 @@ namespace GrowMate.Controllers
         private readonly IRegisterService _registerService;
         private readonly EXE201_GrowMateContext _dbContext;
         private readonly ITokenService _tokenService;
+        private readonly ILoginService _loginService;
 
-        public AuthenticationController(IRegisterService registerService, EXE201_GrowMateContext dbContext, ITokenService tokenService)
+        public AuthenticationController(IRegisterService registerService, EXE201_GrowMateContext dbContext, ITokenService tokenService, ILoginService loginService)
         {
             _registerService = registerService;
             _dbContext = dbContext;
             _tokenService = tokenService;
+            _loginService = loginService;
         }
 
         [HttpPost("register")]
@@ -87,6 +93,47 @@ namespace GrowMate.Controllers
                 User = userDto,
                 Customer = customerDto
             });
+        }
+        [HttpGet("login-google")]
+        public IActionResult LoginWithGoogle()
+        {
+            var redirectUrl = Url.Action("GoogleCallback", "Authentication");
+            var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+
+        [HttpGet("google-callback")]
+        public async Task<IActionResult> GoogleCallback()
+        {
+            try
+            {
+                var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                if (!result.Succeeded)
+                {
+                    return Unauthorized("Đăng nhập Google thất bại");
+
+                }
+
+                var email = result.Principal.FindFirstValue(ClaimTypes.Email);
+                var name = result.Principal.FindFirstValue(ClaimTypes.Name);
+                var picture = result.Principal.FindFirstValue("pictures");
+
+                var user = await _loginService.LoginWithGoogle(email, name);
+                var redirectUrl = $"http://localhost:5173?Token={user.Token}";// hardcode FE, will change later
+
+                Response.Cookies.Append("Token", user.Token, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true, // Bật nếu dùng HTTPS
+                    SameSite = SameSiteMode.None,
+                    Expires = DateTimeOffset.UtcNow.AddDays(3) // Hoặc theo cấu hình
+                });
+                return Redirect(redirectUrl);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }
