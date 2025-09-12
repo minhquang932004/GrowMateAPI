@@ -2,7 +2,7 @@
 
 namespace GrowMate.Services.Auth
 {
-    public interface ILoginService
+    public interface ILoginWithGoogleService
     {
         Task<LoginResponseDto> LoginWithGoogle(string email, string name);
     }

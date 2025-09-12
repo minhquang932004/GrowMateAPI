@@ -9,6 +9,12 @@ namespace GrowMate.DTOs.Responses
         public int Role { get; set; }
         public string RoleName { get; set; } = null!;
         public string? ProfileImageUrl { get; set; }
+        public DateTime? CreateAt { get; set; }
+        public DateTime? UpdateAt { get; set; }
         public bool IsActive { get; set; }
+
+        public CustomerDto? Customer { get; set; }
+        public FarmerResponse? FarmerResponse { get; set; }
     }
+
 }

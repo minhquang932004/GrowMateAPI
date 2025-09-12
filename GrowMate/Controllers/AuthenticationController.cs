@@ -21,9 +21,9 @@ namespace GrowMate.Controllers
         private readonly IRegisterService _registerService;
         private readonly EXE201_GrowMateContext _dbContext;
         private readonly ITokenService _tokenService;
-        private readonly ILoginService _loginService;
+        private readonly ILoginWithGoogleService _loginService;
 
-        public AuthenticationController(IRegisterService registerService, EXE201_GrowMateContext dbContext, ITokenService tokenService, ILoginService loginService)
+        public AuthenticationController(IRegisterService registerService, EXE201_GrowMateContext dbContext, ITokenService tokenService, ILoginWithGoogleService loginService)
         {
             _registerService = registerService;
             _dbContext = dbContext;

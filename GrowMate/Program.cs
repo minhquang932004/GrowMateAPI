@@ -1,6 +1,7 @@
 using GrowMate.Data;
 using GrowMate.Services.Auth;
 using GrowMate.Services.EmailRegister;
+using GrowMate.Services.UserAccount;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -23,7 +24,8 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<IRegisterService, RegisterService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<ILoginService, LoginService>();
+builder.Services.AddScoped<ILoginWithGoogleService, LoginWithGoogleService>();
+builder.Services.AddScoped<IUserAccountService, UserAccountService>();
 
 // AuthN/Z
 builder.Services.AddAuthentication(options =>

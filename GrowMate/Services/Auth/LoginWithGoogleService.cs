@@ -8,12 +8,12 @@ using System.Security.Principal;
 
 namespace GrowMate.Services.Auth
 {
-    public class LoginService : ILoginService
+    public class LoginWithGoogleService : ILoginWithGoogleService
     {
         private readonly EXE201_GrowMateContext _dbContext;
         private readonly ITokenService _tokenService;
 
-        public LoginService(EXE201_GrowMateContext dbContext, ITokenService tokenService)
+        public LoginWithGoogleService(EXE201_GrowMateContext dbContext, ITokenService tokenService)
         {
             _dbContext = dbContext;
             _tokenService = tokenService;
