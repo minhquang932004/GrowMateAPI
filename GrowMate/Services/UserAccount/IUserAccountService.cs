@@ -14,9 +14,10 @@ namespace GrowMate.Services.UserAccount
         Task<UserDto> GetUserByEmailAsync(string email);
 
         Task<AuthResponseDto> CreateUserByAdminAsync(CreateUserByAdminRequest request);
-        Task<int> UpdateUserAsync(User user);
-        Task<bool> DeleteUserAsync(int id);
-
+        Task<AuthResponseDto> UpdateUserAsync(int id, UpdateUserRequest request);
+        Task<AuthResponseDto> UpdateUserByAdminAsync(int id, UpdateUserByAdminRequest request);
+        Task<AuthResponseDto> DeleteUserAsync(int id);
+        Task<AuthResponseDto> UpdateUserPasswordAsync(int id, UpdateUserPwdRequest request);
         Task<UserDto> GetUserByPhoneAsync(string phone);
     }
 }

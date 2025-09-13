@@ -16,7 +16,7 @@ namespace GrowMate.Controllers
             _userAccountService = userAccountService;
         }
 
-        [HttpPost]
+        [HttpPost("by-admin")]
         public async Task<IActionResult> CreateUserByAdmin([FromBody] CreateUserByAdminRequest request)
         {
             if (!ModelState.IsValid)
@@ -79,6 +79,65 @@ namespace GrowMate.Controllers
                 return NotFound("Không tìm thấy danh sách user!!!");
             }
             return Ok(userList);
+        }
+
+        [HttpPut("{id:int}")] 
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { message = errors });
+            }
+            var result = await _userAccountService.UpdateUserAsync(id, request);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        [HttpPut("by-admin/{id:int}")]
+        public async Task<IActionResult> UpdateUserByAdmin(int id, [FromBody] UpdateUserByAdminRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { message = errors });
+            }
+            var result = await _userAccountService.UpdateUserByAdminAsync(id, request);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var result = await _userAccountService.DeleteUserAsync(id);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        [HttpPut("user-password/{id:int}")]
+        public async Task<IActionResult> UpdateUserPassword(int id, UpdateUserPwdRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { message = errors });
+            }
+            var result = await _userAccountService.UpdateUserPasswordAsync(id, request);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
         }
     }
 }

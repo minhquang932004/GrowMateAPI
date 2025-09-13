@@ -62,7 +62,7 @@ namespace GrowMate.Services.UserAccount
                         FarmName = request.FarmerRequest?.FarmName.Trim(),
                         FarmAddress = request.FarmerRequest?.FarmAddress.Trim(),
                         ContactPhone = request.FarmerRequest?.ContactPhone.Trim(),
-                        VerificationStatus = request.FarmerRequest?.VerificationStatus,
+                        VerificationStatus = request.FarmerRequest?.VerificationStatus ?? "Pending",
                         CreatedAt = DateTime.Now,
                     });
                 }
@@ -86,9 +86,25 @@ namespace GrowMate.Services.UserAccount
             };
         }
 
-        public Task<bool> DeleteUserAsync(int id)
+        public async Task<AuthResponseDto> DeleteUserAsync(int id)
         {
-            throw new NotImplementedException();
+            var user = await _context.Users.FirstOrDefaultAsync(a => a.UserId == id);
+            if (user == null)
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Không tìm thấy userId: " + id
+                };
+            }
+            user.IsActive = false;
+            user.UpdatedAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "Xóa user: " + id + " thành công!"
+            };
         }
 
         public async Task<PageResult<User>> GetAllUserAsync(int page, int pageSize)
@@ -171,10 +187,177 @@ namespace GrowMate.Services.UserAccount
             return key == null ? null : await GetUserByIdAsync(key.UserId);
         }
 
-        public Task<int> UpdateUserAsync(User user)
+        public async Task<AuthResponseDto> UpdateUserAsync(int id, UpdateUserRequest request)
         {
-            throw new NotImplementedException();
+            await using var tx = await _context.Database.BeginTransactionAsync();
+            var user = await _context.Users.FirstOrDefaultAsync(a => a.UserId == id);
+            if (user == null)
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Không tìm thấy userId: " + id
+                };
+            }
+            user.Email = request.Email;
+            user.FullName = request.FullName;
+            user.Phone = request.Phone;
+            user.UpdatedAt = DateTime.Now;
+            if (user.Role.Equals(UserRoles.Customer) && request.UpdateCustomer != null)
+            {
+                await UpdateCustomerAsync(user.UserId, request.UpdateCustomer);
+            }
+            else if (user.Role.Equals(UserRoles.Farmer) && request.UpdateFarmer != null)
+            {
+                await UpdateFarmerAsync(user.UserId, request.UpdateFarmer);
+            }
+            await _context.SaveChangesAsync();
+            await tx.CommitAsync();
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "Update thành công userId: " + id
+            };
         }
 
+        public async Task<AuthResponseDto> UpdateUserByAdminAsync(int id, UpdateUserByAdminRequest request)
+        {
+            await using var tx = await _context.Database.BeginTransactionAsync();
+            var user = await _context.Users.FirstOrDefaultAsync(a => a.UserId == id);
+            if (user == null)
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Không tìm thấy userId: " + id
+                };
+            }
+            user.Email = request.Email;
+            user.FullName = request.FullName;
+            user.Phone = request.Phone;
+            user.IsActive = request.IsActive ?? false;
+            user.UpdatedAt = DateTime.Now;
+            if(request.Role != user.Role)
+            {
+                //if role have changed
+                await HandleRoleChangeAsync(user, request.Role, request.UpdateCustomer, request.UpdateFarmer);
+            }
+            else
+            {
+                //if role have not changed, continue update Customer or Farmer table
+                if (user.Role.Equals(UserRoles.Customer) && request.UpdateCustomer != null)
+                {
+                    await UpdateCustomerAsync(id, request.UpdateCustomer);
+                } else if(user.Role.Equals(UserRoles.Farmer) && request.UpdateFarmer != null)
+                {
+                    await UpdateFarmerAsync(id,request.UpdateFarmer);
+                }
+            }
+            await _context.SaveChangesAsync();
+            await tx.CommitAsync();
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "Cập nhật user: " + id + " thành công"
+            };
+        }
+
+
+        private async Task UpdateCustomerAsync(int id, UpdateCustomerRequest request)
+        {
+            var customer = await _context.Customers.FirstOrDefaultAsync(a => a.CustomerId == id);
+            if (customer != null)
+            {
+                customer.WalletBalance = request.WalletBalance;
+                customer.ShippingAddress = request.ShippingAddress;
+            }
+        }
+        private async Task UpdateFarmerAsync(int id, UpdateFarmerRequest request)
+        {
+            var farmer = await _context.Farmers.FirstOrDefaultAsync(a => a.FarmerId == id);
+            if (farmer != null)
+            {
+                farmer.FarmName = request.FarmName;
+                farmer.FarmAddress = request.FarmAddress;
+                farmer.ContactPhone = request.ContactPhone;
+                farmer.VerificationStatus = request.VerificationStatus;
+            }
+        }
+
+        //If User's role have been changed, remove old table and create a new one
+        private async Task HandleRoleChangeAsync(User user, int newRole, UpdateCustomerRequest? updateCustomerRequest, UpdateFarmerRequest? updateFarmerRequest)
+        {
+            if (user.Role.Equals(UserRoles.Customer))
+            {
+                var oldCustomer = await _context.Customers.FirstOrDefaultAsync(a => a.CustomerId == user.UserId);
+                if (oldCustomer != null)
+                {
+                    _context.Customers.Remove(oldCustomer);
+                }
+            } else if (user.Role.Equals(UserRoles.Farmer))
+            {
+                var oldFarmer = await _context.Farmers.FirstOrDefaultAsync(a => a.FarmerId == user.UserId);
+                if(oldFarmer != null)
+                {
+                    _context.Farmers.Remove(oldFarmer);
+                }
+            }
+            user.Role = newRole;
+            if (newRole.Equals(UserRoles.Customer))
+            {
+                var newCustomer = new Customer
+                {
+                    CustomerId = user.UserId,
+                    ShippingAddress = updateCustomerRequest?.ShippingAddress,
+                    WalletBalance = updateCustomerRequest?.WalletBalance ?? 0,
+                    CreatedAt = DateTime.Now,
+                };
+                await _context.Customers.AddAsync(newCustomer);
+            } else if (newRole.Equals(UserRoles.Farmer))
+            {
+                var newFarmer = new Farmer
+                {
+                    FarmerId = user.UserId,
+                    FarmAddress = updateFarmerRequest?.FarmAddress,
+                    FarmName = updateFarmerRequest?.FarmName,
+                    ContactPhone = updateFarmerRequest?.ContactPhone,
+                    VerificationStatus = updateFarmerRequest?.VerificationStatus ?? "Pending",
+                    CreatedAt = DateTime.Now,
+                };
+                await _context.Farmers.AddAsync(newFarmer);
+            }
+        }
+
+        public async Task<AuthResponseDto> UpdateUserPasswordAsync(int id, UpdateUserPwdRequest request)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(a => a.UserId == id);
+            if(user == null)
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Không tìm thấy userId: " + id
+                };
+            }
+            //Verify thì phải mật khẩu của DTO, mật khẩu dưới DB
+            //Ngược lại sẽ sai
+            bool checkPassword = BCrypt.Net.BCrypt.Verify(request.oldPassword, user.Password);
+            if (!checkPassword)
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Mật khẩu cũ không đúng "
+                };
+            }
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.newPassword);
+            user.UpdatedAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "Đổi mật khẩu thành công, mật khẩu mới: " + request.newPassword
+            };
+        }
     }
 }
