@@ -5,6 +5,7 @@ using GrowMate.DTOs.Responses;
 using GrowMate.Models;
 using GrowMate.Services.Farmers;
 using GrowMate.Services.Media;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace GrowMate.Services.Posts
@@ -162,6 +163,92 @@ namespace GrowMate.Services.Posts
                             }).ToList() ?? new List<PostCommentListResponse>()
             };
             return postResponse;
+        }
+
+        public async Task<AuthResponseDto> UpdatePostAsync(int id, CreatePostRequest request)
+        {
+            var postItem = await _context.Posts.Include(a => a.Media).Include(a => a.PostComments).FirstOrDefaultAsync(a => a.PostId == id);
+            if (postItem == null)
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Không tìm thấy postId: " + id
+                };
+            }
+            var checkFarmer = await _farmerService.GetFarmerByIdAsync(request.FarmerId);
+            if (!checkFarmer)
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Không tìm thấy farmerId: " + request.FarmerId
+                };
+            }
+            
+            await using var tx = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                postItem.FarmerId = request.FarmerId;
+                postItem.ProductName = request.ProductName;
+                postItem.ProductType = request.ProductType;
+                postItem.ProductVariety = request.ProductVariety;
+                postItem.FarmName = request.FarmName;
+                postItem.Origin = request.Origin;
+                postItem.PricePerYear = request.PricePerYear;
+                postItem.HarvestWeight = request.HarvestWeight;
+                postItem.Unit = request.Unit;
+                postItem.HarvestFrequency = request.HarvestFrequency;
+                postItem.TreeQuantity = request.TreeQuantity;
+                postItem.Description = request.Description;
+                postItem.Status = "PENDING";
+                postItem.UpdatedAt = DateTime.Now;
+
+                //Media handling
+                if (request.CreateMediaPostRequests != null && request.CreateMediaPostRequests.Any())
+                {
+                    _context.Media.RemoveRange(_context.Media.Where(a => a.PostId == id));
+                    await _mediaService.CreatePostMediaAsync(id, request.CreateMediaPostRequests);
+                }
+                await _context.SaveChangesAsync();
+                await tx.CommitAsync();
+                
+            }
+            catch (Exception ex)
+            {
+                await tx.RollbackAsync();
+                _logger.LogError(ex, "Cập nhật post thất bại");
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Cập nhật post thất bại"
+                };
+            }
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "Cập nhật postId: " + id + " thành công"
+            };
+        }
+
+        public async Task<AuthResponseDto> UpdatePostStatusAsync(int id, string status)
+        {
+            var item = await _context.Posts.FirstOrDefaultAsync(a => a.PostId == id);
+            if (item == null)
+            {
+                return new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Không tìm thấy postId: " + id
+                };
+            }
+            item.Status = status;
+            await _context.SaveChangesAsync();
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "Cập nhật trạng thái của postId: " + id + " thành công"
+            };
         }
     }
 }

@@ -13,5 +13,7 @@ namespace GrowMate.Services.Posts
 
         Task<AuthResponseDto> CreatePostAsync(CreatePostRequest request);
         Task<AuthResponseDto> DeletePostAsync(int id);
+        Task<AuthResponseDto> UpdatePostStatusAsync(int id, string status);
+        Task<AuthResponseDto> UpdatePostAsync(int id, CreatePostRequest request);
     }
 }

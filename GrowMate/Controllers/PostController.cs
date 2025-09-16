@@ -80,5 +80,31 @@ namespace GrowMate.Controllers
             }
             return BadRequest(result);
         }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdatePost(int id, [FromBody] CreatePostRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { message = errors });
+            }
+            var result = await _postService.UpdatePostAsync(id, request);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+        [HttpPut("{id:int}/status")]
+        public async Task<IActionResult> UpdatePostStatus(int id, [FromQuery] string status)
+        {
+            var result = await _postService.UpdatePostStatusAsync(id, status);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
     }
 }
