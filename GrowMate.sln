@@ -1,9 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36414.22 d17.14
+VisualStudioVersion = 17.14.36414.22
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrowMate", "GrowMate\GrowMate.csproj", "{3378D3E0-73D9-4032-95B1-7756235349CD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrowMateWebAPIs", "GrowMate\GrowMateWebAPIs.csproj", "{3378D3E0-73D9-4032-95B1-7756235349CD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrowMate.Repositories", "GrowMate.Repositories\GrowMate.Repositories.csproj", "{AAE479D5-4DC7-493A-8913-DB378B0DFBCF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrowMate.Services", "GrowMate.Services\GrowMate.Services.csproj", "{22373A0D-DAA2-4620-B04C-4CFFE9930257}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrowMate.Contracts", "GrowMate.Contracts\GrowMate.Contracts.csproj", "{C244240F-99C3-42FC-8470-F3CBFCE44547}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +21,18 @@ Global
 		{3378D3E0-73D9-4032-95B1-7756235349CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3378D3E0-73D9-4032-95B1-7756235349CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3378D3E0-73D9-4032-95B1-7756235349CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAE479D5-4DC7-493A-8913-DB378B0DFBCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAE479D5-4DC7-493A-8913-DB378B0DFBCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAE479D5-4DC7-493A-8913-DB378B0DFBCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAE479D5-4DC7-493A-8913-DB378B0DFBCF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22373A0D-DAA2-4620-B04C-4CFFE9930257}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22373A0D-DAA2-4620-B04C-4CFFE9930257}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22373A0D-DAA2-4620-B04C-4CFFE9930257}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22373A0D-DAA2-4620-B04C-4CFFE9930257}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C244240F-99C3-42FC-8470-F3CBFCE44547}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C244240F-99C3-42FC-8470-F3CBFCE44547}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C244240F-99C3-42FC-8470-F3CBFCE44547}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C244240F-99C3-42FC-8470-F3CBFCE44547}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
