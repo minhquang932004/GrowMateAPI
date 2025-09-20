@@ -6,5 +6,7 @@ namespace GrowMate.Services.Authentication
     public interface ILoginService
     {
         Task<LoginResponseDto> LoginAsync(LoginRequestDto request, CancellationToken ct = default);
+
+        Task<LoginResponseDto> LoginWithGoogle(string email, string name, CancellationToken ct = default);
     }
 }

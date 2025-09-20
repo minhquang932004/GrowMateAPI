@@ -1,4 +1,5 @@
 ﻿using GrowMate.Repositories.Data;
+using GrowMate.Repositories.Extensions;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Repositories.Models;
 using Microsoft.EntityFrameworkCore;
@@ -50,6 +51,17 @@ namespace GrowMate.Repositories
         public void Update(User user)
         {
             _dbContext.Users.Update(user);
+        }
+
+        public Task<PageResult<User>> GetAllAsync(int page, int pageSize, CancellationToken ct = default)
+        {
+            var item = _dbContext.Users.AsNoTracking().OrderByDescending(a => a.CreatedAt);
+            return item.ToPagedResultAsync(page,pageSize, ct);
+        }
+
+        public Task<bool> PhoneExistsAsync(string phone, CancellationToken ct = default)
+        {
+            return _dbContext.Users.AsNoTracking().AnyAsync(p => p.Phone == phone, ct);
         }
     }
 }

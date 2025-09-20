@@ -2,10 +2,12 @@ using GrowMate.Repositories;
 using GrowMate.Repositories.Data;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Services.Authentication;
+using GrowMate.Services.Customers;
 using GrowMate.Services.EmailRegister;
 using GrowMate.Services.Farmers;
 using GrowMate.Services.Media;
 using GrowMate.Services.Posts;
+using GrowMate.Services.Users;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -45,6 +47,8 @@ builder.Services.AddScoped<ILoginService, LoginService>();
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<IFarmerService, FarmerService>();
 builder.Services.AddScoped<IMediaService, MediaService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
 
 
 

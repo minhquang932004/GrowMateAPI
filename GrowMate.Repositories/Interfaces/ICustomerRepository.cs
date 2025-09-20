@@ -12,5 +12,7 @@ namespace GrowMate.Repositories.Interfaces
         Task<Customer?> GetByUserIdAsync(int userId, CancellationToken ct = default);
         Task<bool> AnyAsync(int userId, CancellationToken ct = default);
         Task CreateAsync(Customer customer, CancellationToken ct = default);
+        Task Remove(Customer customer);
+        void UpdateAsync(Customer customer);
     }
 }

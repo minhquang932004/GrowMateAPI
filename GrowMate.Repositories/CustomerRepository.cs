@@ -28,5 +28,16 @@ namespace GrowMate.Repositories
         {
             await _dbContext.Customers.AddAsync(customer, ct);
         }
+
+        public async Task Remove(Customer customer)
+        {
+            var item = _dbContext.Customers.Remove(customer);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public void UpdateAsync(Customer customer)
+        {
+            _dbContext.Customers.Update(customer);
+        }
     }
 }

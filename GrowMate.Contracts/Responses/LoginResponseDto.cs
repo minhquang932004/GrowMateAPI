@@ -9,6 +9,7 @@ namespace GrowMate.Contracts.Responses
 
         public UserDto? User { get; set; }
         public CustomerDto? Customer { get; set; }
+        public FarmerResponse? FarmerResponse { get; set; }
 
         // Optional diagnostics fields (do not reveal sensitive info)
         public string? ErrorCode { get; set; }       // e.g., "AUTH_INVALID_CREDENTIALS"

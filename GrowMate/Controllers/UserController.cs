@@ -1,143 +1,143 @@
-﻿//using GrowMate.DTOs.Requests;
-//using GrowMate.Services.UserAccount;
-//using Microsoft.AspNetCore.Http;
-//using Microsoft.AspNetCore.Mvc;
+﻿using GrowMate.Contracts.Requests;
+using GrowMate.Services.Users;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
-//namespace GrowMate.Controllers
-//{
-//    [Route("api/users")]
-//    [ApiController]
-//    public class UserController : ControllerBase
-//    {
-//        private readonly IUserAccountService _userAccountService;
+namespace GrowMate.Controllers
+{
+    [Route("api/users")]
+    [ApiController]
+    public class UserController : ControllerBase
+    {
+        private readonly IUserService _userAccountService;
 
-//        public UserController(IUserAccountService userAccountService)
-//        {
-//            _userAccountService = userAccountService;
-//        }
+        public UserController(IUserService userAccountService)
+        {
+            _userAccountService = userAccountService;
+        }
 
-//        [HttpPost("by-admin")]
-//        public async Task<IActionResult> CreateUserByAdmin([FromBody] CreateUserByAdminRequest request)
-//        {
-//            if (!ModelState.IsValid)
-//            {
-//                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-//                return BadRequest(new { message = errors });
-//            }
-//            var emailExist = await _userAccountService.GetUserByEmailAsync(request.Email);
-//            if (emailExist != null)
-//            {
-//                return BadRequest(new { Message = "Email đã tồn tại!!" });
-//            }
-//            var phoneExist = await _userAccountService.GetUserByPhoneAsync(request.Phone);
-//            if (phoneExist != null)
-//            {
-//                return BadRequest(new { Message = "Số điện thoại đã được đăng kí" });
-//            }
-//            var result = await _userAccountService.CreateUserByAdminAsync(request);
-//            if (result.Success)
-//            {
-//                return Ok(result);
-//            }
-//            return BadRequest(result);
+        [HttpPost("by-admin")]
+        public async Task<IActionResult> CreateUserByAdmin([FromBody] CreateUserByAdminRequest request, CancellationToken ct)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { message = errors });
+            }
+            var emailExist = await _userAccountService.GetUserByEmailAsync(request.Email,false, ct);
+            if (emailExist != null)
+            {
+                return BadRequest(new { Message = "Email đã tồn tại!!" });
+            }
+            //var phoneExist = await _userAccountService.GetUserByPhoneAsync(request.Phone);
+            //if (phoneExist != null)
+            //{
+            //    return BadRequest(new { Message = "Số điện thoại đã được đăng kí" });
+            //}
+            var result = await _userAccountService.CreateUserByAdminAsync(request, ct);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
 
-//        }
+        }
 
-//        [HttpGet]
-//        public async Task<IActionResult> GetUsers([FromQuery] int? id, [FromQuery] string? email, [FromQuery] string? phone, [FromQuery] int page = 1, [FromQuery] int pageSize = 3)
-//        {
-//            if (id.HasValue)
-//            {
-//                var user = await _userAccountService.GetUserByIdAsync(id.Value);
-//                if (user == null)
-//                {
-//                    return NotFound("Không tìm thấy userId: " + id.Value);
-//                }
-//                return Ok(user);
-//            }
-//            if (!string.IsNullOrWhiteSpace(email))
-//            {
-//                var user = await _userAccountService.GetUserByEmailAsync(email);
-//                if (user == null)
-//                {
-//                    return NotFound("Không tìm thấy user có email: " + email);
-//                }
-//                return Ok(user);
-//            }
-//            if (!string.IsNullOrWhiteSpace(phone))
-//            {
-//                var user = await _userAccountService.GetUserByPhoneAsync(phone);
-//                if (user == null)
-//                {
-//                    return NotFound("Không tìm thấy user có số điện thoại: " + phone);
-//                }
-//                return Ok(user);
-//            }
-//            var userList = await _userAccountService.GetAllUserAsync(page, pageSize);
-//            if (userList.Items == null || userList.Items.Count == 0)
-//            {
-//                return NotFound("Không tìm thấy danh sách user!!!");
-//            }
-//            return Ok(userList);
-//        }
+        [HttpGet]
+        public async Task<IActionResult> GetUsers([FromQuery] int? id, [FromQuery] string? email, [FromQuery] string? phone, [FromQuery] bool includeCustomer = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 3, CancellationToken ct = default)
+        {
+            if (id.HasValue)
+            {
+                var user = await _userAccountService.GetUserByIdAsync(id.Value, includeCustomer, ct);
+                if (user == null)
+                {
+                    return NotFound("Không tìm thấy userId: " + id.Value);
+                }
+                return Ok(user);
+            }
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                var user = await _userAccountService.GetUserByEmailAsync(email, includeCustomer, ct);
+                if (user == null)
+                {
+                    return NotFound("Không tìm thấy user có email: " + email);
+                }
+                return Ok(user);
+            }
+            //if (!string.IsNullOrWhiteSpace(phone))
+            //{
+            //    var user = await _userAccountService.GetUserByPhoneAsync(phone);
+            //    if (user == null)
+            //    {
+            //        return NotFound("Không tìm thấy user có số điện thoại: " + phone);
+            //    }
+            //    return Ok(user);
+            //}
+            var userList = await _userAccountService.GetAllUserAsync(page, pageSize, ct);
+            if (userList.Items == null || userList.Items.Count == 0)
+            {
+                return NotFound("Không tìm thấy danh sách user!!!");
+            }
+            return Ok(userList);
+        }
 
-//        [HttpPut("{id:int}")] 
-//        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserRequest request)
-//        {
-//            if (!ModelState.IsValid)
-//            {
-//                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-//                return BadRequest(new { message = errors });
-//            }
-//            var result = await _userAccountService.UpdateUserAsync(id, request);
-//            if (result.Success)
-//            {
-//                return Ok(result);
-//            }
-//            return BadRequest(result);
-//        }
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserRequest request, CancellationToken ct)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { message = errors });
+            }
+            var result = await _userAccountService.UpdateUserAsync(id, request, ct);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
 
-//        [HttpPut("by-admin/{id:int}")]
-//        public async Task<IActionResult> UpdateUserByAdmin(int id, [FromBody] UpdateUserByAdminRequest request)
-//        {
-//            if (!ModelState.IsValid)
-//            {
-//                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-//                return BadRequest(new { message = errors });
-//            }
-//            var result = await _userAccountService.UpdateUserByAdminAsync(id, request);
-//            if (result.Success)
-//            {
-//                return Ok(result);
-//            }
-//            return BadRequest(result);
-//        }
+        [HttpPut("by-admin/{id:int}")]
+        public async Task<IActionResult> UpdateUserByAdmin(int id, [FromBody] UpdateUserByAdminRequest request, CancellationToken ct)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { message = errors });
+            }
+            var result = await _userAccountService.UpdateUserByAdminAsync(id, request, ct);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
 
-//        [HttpDelete("{id:int}")]
-//        public async Task<IActionResult> DeleteUser(int id)
-//        {
-//            var result = await _userAccountService.DeleteUserAsync(id);
-//            if (result.Success)
-//            {
-//                return Ok(result);
-//            }
-//            return BadRequest(result);
-//        }
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeleteUser(int id, CancellationToken ct)
+        {
+            var result = await _userAccountService.DeleteUserAsync(id, ct);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
 
-//        [HttpPut("user-password/{id:int}")]
-//        public async Task<IActionResult> UpdateUserPassword(int id, UpdateUserPwdRequest request)
-//        {
-//            if (!ModelState.IsValid)
-//            {
-//                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-//                return BadRequest(new { message = errors });
-//            }
-//            var result = await _userAccountService.UpdateUserPasswordAsync(id, request);
-//            if (result.Success)
-//            {
-//                return Ok(result);
-//            }
-//            return BadRequest(result);
-//        }
-//    }
-//}
+        [HttpPut("user-password/{id:int}")]
+        public async Task<IActionResult> UpdateUserPassword(int id, UpdateUserPwdRequest request, CancellationToken ct)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { message = errors });
+            }
+            var result = await _userAccountService.UpdateUserPasswordAsync(id, request, ct);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+    }
+}

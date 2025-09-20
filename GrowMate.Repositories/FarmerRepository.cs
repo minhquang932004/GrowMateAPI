@@ -14,10 +14,26 @@ namespace GrowMate.Repositories
             _dbContext = dbContext;
         }
 
+        public async Task CreateAsync(Farmer farmer, CancellationToken ct = default)
+        {
+           await _dbContext.Farmers.AddAsync(farmer, ct);
+        }
+
         public Task<bool> ExistsAsync(int id, CancellationToken ct = default)
             => _dbContext.Farmers.AsNoTracking().AnyAsync(f => f.FarmerId == id, ct);
 
         public Task<Farmer?> GetByIdAsync(int id, CancellationToken ct = default)
             => _dbContext.Farmers.AsNoTracking().FirstOrDefaultAsync(f => f.FarmerId == id, ct);
+
+        public async Task Remove(Farmer farmer)
+        {
+            var item = _dbContext.Farmers.Remove(farmer);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public void UpdateAsync(Farmer farmer)
+        {
+            _dbContext.Farmers.Update(farmer);
+        }
     }
 }
