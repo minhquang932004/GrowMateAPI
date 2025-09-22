@@ -9,6 +9,9 @@ public partial class Customer
 {
     public int CustomerId { get; set; }
 
+    // New explicit FK to Users
+    public int UserId { get; set; }
+
     public string ShippingAddress { get; set; }
 
     public decimal? WalletBalance { get; set; }
@@ -17,5 +20,6 @@ public partial class Customer
 
     public virtual ICollection<Adoption> Adoptions { get; set; } = new List<Adoption>();
 
-    public virtual User CustomerNavigation { get; set; }
+    // Rename to a clearer navigation name
+    public virtual User User { get; set; }
 }

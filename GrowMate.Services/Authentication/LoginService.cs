@@ -3,10 +3,8 @@ using GrowMate.Contracts.Responses;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Repositories.Models;
 using GrowMate.Repositories.Models.Roles;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.Security.Principal;
 
 namespace GrowMate.Services.Authentication
 {
@@ -104,6 +102,7 @@ namespace GrowMate.Services.Authentication
             var account = await _unitOfWork.Users.GetByEmailAsync(email, includeCustomer: false, ct);
             CustomerDto customerResponse = null;
             FarmerResponse farmerResponse = null;
+
             try
             {
                 await _unitOfWork.ExecuteInTransactionAsync(async innerCt =>
@@ -120,30 +119,32 @@ namespace GrowMate.Services.Authentication
                             Password = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
                             Role = UserRoles.Customer
                         };
+
                         await _unitOfWork.Users.AddAsync(newAccount, innerCt);
                         await _unitOfWork.SaveChangesAsync(innerCt); // ensure UserId is generated
-                                                                     // Ensure a corresponding Customer row exists (shared PK with UserId)
+
+                        // Ensure a corresponding Customer row exists (separate PK, FK via UserId)
                         var hasCustomer = await _unitOfWork.Customers.AnyAsync(newAccount.UserId, innerCt);
                         if (!hasCustomer)
                         {
                             var customer = new Customer
                             {
-                                CustomerId = newAccount.UserId,
+                                UserId = newAccount.UserId,   // FK to Users
                                 CreatedAt = DateTime.Now
                             };
                             await _unitOfWork.Customers.CreateAsync(customer, innerCt);
                             await _unitOfWork.SaveChangesAsync(innerCt);
                         }
 
-
                         account = newAccount;
-
                     }
                 }, ct);
+
                 var (token, expiresAt) = _tokenService.GenerateToken(account);
+
                 if (account.Role.Equals(UserRoles.Customer))
                 {
-                    var customer = await _unitOfWork.Customers.GetByUserIdAsync(account.UserId);
+                    var customer = await _unitOfWork.Customers.GetByUserIdAsync(account.UserId, ct);
                     if (customer != null)
                     {
                         customerResponse = new CustomerDto
@@ -153,21 +154,22 @@ namespace GrowMate.Services.Authentication
                             WalletBalance = customer.WalletBalance,
                         };
                     }
-
                 }
                 else if (account.Role.Equals(UserRoles.Farmer))
                 {
-                    var farmer = await _unitOfWork.Farmers.GetByIdAsync(account.UserId);
+                    var farmer = await _unitOfWork.Farmers.GetByIdAsync(account.UserId, ct);
                     if (farmer != null)
                     {
                         farmerResponse = new FarmerResponse
                         {
+                            FarmerId = farmer.FarmerId,
                             FarmName = farmer.FarmName,
                             FarmAddress = farmer.FarmAddress,
                             ContactPhone = farmer.ContactPhone,
                         };
                     }
                 }
+
                 return new LoginResponseDto
                 {
                     Success = true,
@@ -184,8 +186,7 @@ namespace GrowMate.Services.Authentication
                     FarmerResponse = farmerResponse
                 };
             }
-            catch
-            (Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Log in with Google thất bại");
                 return Fail("Log in with Google thất bại", " Exception: " + ex, "AUTH_INVALID_CREDENTIALS");
@@ -195,12 +196,8 @@ namespace GrowMate.Services.Authentication
         private LoginResponseDto Fail(string publicMessage, string detailedMessage, string errorCode)
         {
             var correlationId = Guid.NewGuid().ToString("N");
-
-            // Structured log with correlationId and detailed reason
             _logger.LogInformation("Login failed [{CorrelationId}] {Reason}", correlationId, detailedMessage);
-
             var message = _env.IsDevelopment() ? detailedMessage : publicMessage;
-
             return new LoginResponseDto
             {
                 Success = false,

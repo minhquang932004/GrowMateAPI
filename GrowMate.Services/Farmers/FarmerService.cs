@@ -15,16 +15,16 @@ namespace GrowMate.Services.Farmers
 
         public async Task CreateByUserId(int userId, FarmerRequest? request, CancellationToken ct)
         {
-                var newFarmer = new Farmer
-                {
-                    FarmerId = userId,
-                    FarmAddress = request.FarmAddress,
-                    FarmName = request.FarmName,
-                    ContactPhone = request.ContactPhone,
-                    VerificationStatus = request.VerificationStatus,
-                    CreatedAt = DateTime.Now,
-                };
-                await _unitOfWork.Farmers.CreateAsync(newFarmer, ct);
+            var newFarmer = new Farmer
+            {
+                UserId = userId,
+                FarmAddress = request?.FarmAddress,
+                FarmName = request?.FarmName,
+                ContactPhone = request?.ContactPhone,
+                VerificationStatus = request?.VerificationStatus,
+                CreatedAt = DateTime.Now,
+            };
+            await _unitOfWork.Farmers.CreateAsync(newFarmer, ct);
         }
 
         public Task<bool> GetFarmerByIdAsync(int id)
@@ -32,7 +32,7 @@ namespace GrowMate.Services.Farmers
 
         public async Task RemoveByUserIdAsync(int userId, CancellationToken ct)
         {
-            var farmer = await _unitOfWork.Farmers.GetByIdAsync(userId, ct);
+            var farmer = await _unitOfWork.Farmers.GetByUserIdAsync(userId, ct);
             if (farmer != null)
             {
                 _unitOfWork.Farmers.Remove(farmer);
@@ -45,7 +45,7 @@ namespace GrowMate.Services.Farmers
             if (farmerExist != null)
             {
                 farmerExist.FarmName = request.FarmName;
-                farmerExist.FarmAddress = request.FarmAddress;  
+                farmerExist.FarmAddress = request.FarmAddress;
                 farmerExist.ContactPhone = request.ContactPhone;
                 farmerExist.VerificationStatus = request.VerificationStatus;
                 _unitOfWork.Farmers.UpdateAsync(farmerExist);

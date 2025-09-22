@@ -115,12 +115,12 @@ namespace GrowMate.Services.EmailRegister
             {
                 await _unitOfWork.Customers.CreateAsync(new Customer
                 {
-                    CustomerId = user.UserId,
+                    UserId = user.UserId,          // FIX: do not set CustomerId (identity)
                     CreatedAt = DateTime.UtcNow
                 }, ct);
             }
 
-            await  _unitOfWork.SaveChangesAsync(ct);
+            await _unitOfWork.SaveChangesAsync(ct);
 
             return new AuthResponseDto
             {

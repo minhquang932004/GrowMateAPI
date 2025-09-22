@@ -113,24 +113,30 @@ public partial class EXE201_GrowMateContext : DbContext
         modelBuilder.Entity<Customer>(entity =>
         {
             entity.HasKey(e => e.CustomerId).HasName("PK__customer__CD65CB851E551743");
-
             entity.ToTable("customers");
 
             entity.Property(e => e.CustomerId)
-                .ValueGeneratedNever()
-                .HasColumnName("customer_id");
+                .HasColumnName("customer_id"); // identity by default in SQL Server when migrating
+
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id");
+
+            entity.HasIndex(e => e.UserId).IsUnique();
+
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+
             entity.Property(e => e.ShippingAddress).HasColumnName("shipping_address");
+
             entity.Property(e => e.WalletBalance)
                 .HasDefaultValue(0.00m)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("wallet_balance");
 
-            entity.HasOne(d => d.CustomerNavigation).WithOne(p => p.Customer)
-                .HasForeignKey<Customer>(d => d.CustomerId)
+            entity.HasOne(d => d.User).WithOne(p => p.Customer)
+                .HasForeignKey<Customer>(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_customers_users");
         });
@@ -138,33 +144,41 @@ public partial class EXE201_GrowMateContext : DbContext
         modelBuilder.Entity<Farmer>(entity =>
         {
             entity.HasKey(e => e.FarmerId).HasName("PK__farmers__C61558250D572FE6");
-
             entity.ToTable("farmers");
 
             entity.Property(e => e.FarmerId)
-                .ValueGeneratedNever()
-                .HasColumnName("farmer_id");
+                .HasColumnName("farmer_id"); // identity by default in SQL Server when migrating
+
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id");
+
+            entity.HasIndex(e => e.UserId).IsUnique();
+
             entity.Property(e => e.ContactPhone)
                 .HasMaxLength(20)
                 .HasColumnName("contact_phone");
+
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+
             entity.Property(e => e.FarmAddress)
                 .IsRequired()
                 .HasColumnName("farm_address");
+
             entity.Property(e => e.FarmName)
                 .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("farm_name");
+
             entity.Property(e => e.VerificationStatus)
                 .HasMaxLength(50)
                 .HasDefaultValue("pending")
                 .HasColumnName("verification_status");
 
-            entity.HasOne(d => d.FarmerNavigation).WithOne(p => p.Farmer)
-                .HasForeignKey<Farmer>(d => d.FarmerId)
+            entity.HasOne(d => d.User).WithOne(p => p.Farmer)
+                .HasForeignKey<Farmer>(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_farmers_users");
         });

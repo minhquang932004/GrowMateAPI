@@ -19,14 +19,14 @@ namespace GrowMate.Services.Customers
 
         public async Task CreateByUserId(int userId, CustomerRequest? request, CancellationToken ct)
         {
-                var newCustomer = new Customer
-                {
-                    CustomerId = userId,
-                    ShippingAddress = request.ShippingAddress,
-                    WalletBalance = request.WalletBalance,
-                    CreatedAt = DateTime.Now,
-                };
-                await _unitOfWork.Customers.CreateAsync(newCustomer, ct);
+            var newCustomer = new Customer
+            {
+                UserId = userId,
+                ShippingAddress = request?.ShippingAddress,
+                WalletBalance = request?.WalletBalance ?? 0,
+                CreatedAt = DateTime.Now,
+            };
+            await _unitOfWork.Customers.CreateAsync(newCustomer, ct);
         }
 
         public async Task<bool> GetCustomerByIdAsync(int id)
@@ -44,7 +44,7 @@ namespace GrowMate.Services.Customers
         public async Task UpdateCustomerAsync(int id, CustomerRequest request, CancellationToken ct)
         {
             var customerExist = await _unitOfWork.Customers.GetByUserIdAsync(id, ct);
-            if(customerExist != null)
+            if (customerExist != null)
             {
                 customerExist.ShippingAddress = request.ShippingAddress;
                 customerExist.WalletBalance = request.WalletBalance;

@@ -9,6 +9,9 @@ public partial class Farmer
 {
     public int FarmerId { get; set; }
 
+    // New explicit FK to Users
+    public int UserId { get; set; }
+
     public string FarmName { get; set; }
 
     public string FarmAddress { get; set; }
@@ -19,7 +22,7 @@ public partial class Farmer
 
     public DateTime? CreatedAt { get; set; }
 
-    public virtual User FarmerNavigation { get; set; }
+    public virtual User User { get; set; }
 
     public virtual ICollection<MonthlyReport> MonthlyReports { get; set; } = new List<MonthlyReport>();
 

@@ -16,7 +16,7 @@ namespace GrowMate.Repositories
 
         public async Task CreateAsync(Farmer farmer, CancellationToken ct = default)
         {
-           await _dbContext.Farmers.AddAsync(farmer, ct);
+            await _dbContext.Farmers.AddAsync(farmer, ct);
         }
 
         public Task<bool> ExistsAsync(int id, CancellationToken ct = default)
@@ -24,6 +24,12 @@ namespace GrowMate.Repositories
 
         public Task<Farmer?> GetByIdAsync(int id, CancellationToken ct = default)
             => _dbContext.Farmers.AsNoTracking().FirstOrDefaultAsync(f => f.FarmerId == id, ct);
+
+        public Task<Farmer?> GetByUserIdAsync(int userId, CancellationToken ct = default)
+            => _dbContext.Farmers.AsNoTracking().FirstOrDefaultAsync(f => f.UserId == userId, ct);
+
+        public Task<bool> ExistsByUserIdAsync(int userId, CancellationToken ct = default)
+            => _dbContext.Farmers.AsNoTracking().AnyAsync(f => f.UserId == userId, ct);
 
         public async Task Remove(Farmer farmer)
         {
