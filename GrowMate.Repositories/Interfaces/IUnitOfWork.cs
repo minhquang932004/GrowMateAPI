@@ -8,6 +8,7 @@
         IPostRepository Posts { get; }
         IFarmerRepository Farmers { get; }
         IMediaRepository Media { get; }
+        ITreeListingRepository TreeListings { get; }
 
         Task<int> SaveChangesAsync(CancellationToken ct = default);
         Task ExecuteInTransactionAsync(Func<CancellationToken, Task> action, CancellationToken ct = default);

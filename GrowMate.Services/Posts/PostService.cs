@@ -6,6 +6,7 @@ using GrowMate.Repositories.Models;
 using GrowMate.Repositories.Models.Statuses;
 using GrowMate.Services.Farmers;
 using GrowMate.Services.Media;
+using GrowMate.Services.TreeListings;
 using Microsoft.Extensions.Logging;
 
 namespace GrowMate.Services.Posts
@@ -16,13 +17,15 @@ namespace GrowMate.Services.Posts
         private readonly IFarmerService _farmerService;
         private readonly ILogger<PostService> _logger;
         private readonly IMediaService _mediaService;
+        private readonly ITreeListingService _treeListingService;
 
-        public PostService(IUnitOfWork unitOfWork, IFarmerService farmerService, ILogger<PostService> logger, IMediaService mediaService)
+        public PostService(IUnitOfWork unitOfWork, IFarmerService farmerService, ILogger<PostService> logger, IMediaService mediaService, ITreeListingService treeListingService)
         {
             _unitOfWork = unitOfWork;
             _farmerService = farmerService;
             _logger = logger;
             _mediaService = mediaService;
+            _treeListingService = treeListingService;
         }
 
         public Task<PageResult<Post>> GetAllPostsAsync(int page, int pageSize, CancellationToken ct = default)
@@ -188,7 +191,22 @@ namespace GrowMate.Services.Posts
             post.UpdatedAt = DateTime.Now;
             _unitOfWork.Posts.Update(post);
             await _unitOfWork.SaveChangesAsync(ct);
-
+            var checkList = await _treeListingService.GetByPostIdAsync(id, false, ct);
+            if(post.Status.Equals(PostStatuses.Approved) && checkList == null)
+            {
+                var newTreeListing = new TreeListing
+                {
+                    PostId = post.PostId,
+                    FarmerId = post.FarmerId,
+                    PricePerTree = post.PricePerYear,
+                    TotalQuantity = post.TreeQuantity,
+                    AvailableQuantity = post.TreeQuantity,
+                    Status = TreeListingStatuses.Active,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now,
+                };
+                await _treeListingService.AddAsync(newTreeListing, ct);
+            }
             return new AuthResponseDto { Success = true, Message = "Cập nhật trạng thái của postId: " + id + " thành công" };
         }
     }

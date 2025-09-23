@@ -16,7 +16,8 @@ namespace GrowMate.Repositories
             IEmailVerificationRepository emailVerifications,
             IPostRepository posts,
             IFarmerRepository farmers,
-            IMediaRepository media)
+            IMediaRepository media,
+            ITreeListingRepository treeListing)
         {
             _dbContext = dbContext;
             Users = users;
@@ -25,6 +26,7 @@ namespace GrowMate.Repositories
             Posts = posts;
             Farmers = farmers;
             Media = media;
+            TreeListings = treeListing;
         }
 
         public IUserRepository Users { get; }
@@ -33,6 +35,7 @@ namespace GrowMate.Repositories
         public IPostRepository Posts { get; }
         public IFarmerRepository Farmers { get; }
         public IMediaRepository Media { get; }
+        public ITreeListingRepository TreeListings {  get; }
 
         public Task<int> SaveChangesAsync(CancellationToken ct = default)
             => _dbContext.SaveChangesAsync(ct);

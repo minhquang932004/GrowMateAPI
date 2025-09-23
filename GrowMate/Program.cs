@@ -7,6 +7,7 @@ using GrowMate.Services.EmailRegister;
 using GrowMate.Services.Farmers;
 using GrowMate.Services.Media;
 using GrowMate.Services.Posts;
+using GrowMate.Services.TreeListings;
 using GrowMate.Services.Users;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -33,6 +34,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<IFarmerRepository, FarmerRepository>();
 builder.Services.AddScoped<IMediaRepository, MediaRepository>();
+builder.Services.AddScoped<ITreeListingRepository, TreeListingRepository>();
 
 // DbContext for EF Core tools and runtime
 builder.Services.AddDbContext<EXE201_GrowMateContext>(options =>
@@ -49,6 +51,7 @@ builder.Services.AddScoped<IFarmerService, FarmerService>();
 builder.Services.AddScoped<IMediaService, MediaService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<ITreeListingService, TreeListingService>();
 
 
 
