@@ -69,28 +69,11 @@ namespace GrowMate.Services.Users
                     await _unitOfWork.SaveChangesAsync(innerCt);
                     if (user.Role.Equals(UserRoles.Customer) && request.CustomerRequest != null)
                     {
-                        var customerCreate = new Customer
-                        {
-                            CustomerId = user.UserId,
-                            ShippingAddress = request.CustomerRequest.ShippingAddress,
-                            WalletBalance = request.CustomerRequest.WalletBalance,
-                            CreatedAt = DateTime.Now,
-
-                        };
-                        await _unitOfWork.Customers.CreateAsync(customerCreate, innerCt);
+                        await _customerService.CreateByUserId(user.UserId, request.CustomerRequest, innerCt);
                     }
                     else if (user.Role.Equals(UserRoles.Farmer) && request.FarmerRequest != null)
                     {
-                        var farmerCreate = new Farmer
-                        {
-                            FarmerId = user.UserId,
-                            FarmName = request.FarmerRequest.FarmName,
-                            FarmAddress = request.FarmerRequest.FarmAddress,
-                            VerificationStatus = request.FarmerRequest.VerificationStatus,
-                            ContactPhone = request.FarmerRequest.ContactPhone,
-                            CreatedAt = DateTime.Now,
-                        };
-                        await _unitOfWork.Farmers.CreateAsync(farmerCreate, innerCt);
+                        await _farmerService.CreateByUserId(user.UserId, request.FarmerRequest, innerCt);
                     }
                     await _unitOfWork.SaveChangesAsync(innerCt);
                 }, ct);
@@ -183,7 +166,7 @@ namespace GrowMate.Services.Users
             }
             else if (user.Role.Equals(UserRoles.Farmer))
             {
-                user.Farmer = await _unitOfWork.Farmers.GetByIdAsync(user.UserId, ct);
+                user.Farmer = await _unitOfWork.Farmers.GetByUserIdAsync(user.UserId, ct);
             }
             var userResponse = new UserDto
             {

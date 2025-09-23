@@ -46,6 +46,7 @@ namespace GrowMate.Services.Customers
             var customerExist = await _unitOfWork.Customers.GetByUserIdAsync(id, ct);
             if (customerExist != null)
             {
+                customerExist.UserId = id;
                 customerExist.ShippingAddress = request.ShippingAddress;
                 customerExist.WalletBalance = request.WalletBalance;
                 _unitOfWork.Customers.UpdateAsync(customerExist);

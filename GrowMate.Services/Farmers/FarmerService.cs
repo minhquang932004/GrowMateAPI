@@ -44,6 +44,7 @@ namespace GrowMate.Services.Farmers
             var farmerExist = await _unitOfWork.Farmers.GetByIdAsync(id, ct);
             if (farmerExist != null)
             {
+                farmerExist.UserId = id;
                 farmerExist.FarmName = request.FarmName;
                 farmerExist.FarmAddress = request.FarmAddress;
                 farmerExist.ContactPhone = request.ContactPhone;
