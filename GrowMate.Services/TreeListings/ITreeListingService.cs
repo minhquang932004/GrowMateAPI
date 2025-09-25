@@ -16,7 +16,7 @@ namespace GrowMate.Services.TreeListings
         Task<PageResult<TreeListing>> GetByFarmerIdAsync(int farmerId, int page, int pageSize, CancellationToken ct = default);
         Task<TreeListingResponse> GetByPostIdAsync(int postId, bool includeTrees, CancellationToken ct = default);
 
-        Task<bool> AddAsync(TreeListing treeListing, CancellationToken ct = default);
-        //void UpdateAsync(TreeListing treeListing);
+        Task AddAsync(TreeListing treeListing, CancellationToken ct = default);
+        void UpdateAsync(TreeListing treeListing);
     }
 }

@@ -186,26 +186,73 @@ namespace GrowMate.Services.Posts
             {
                 return new AuthResponseDto { Success = false, Message = "Không tìm thấy postId: " + id };
             }
-
-            post.Status = status;
-            post.UpdatedAt = DateTime.Now;
-            _unitOfWork.Posts.Update(post);
-            await _unitOfWork.SaveChangesAsync(ct);
-            var checkList = await _treeListingService.GetByPostIdAsync(id, false, ct);
-            if(post.Status.Equals(PostStatuses.Approved) && checkList == null)
+            try
             {
-                var newTreeListing = new TreeListing
+                await _unitOfWork.ExecuteInTransactionAsync(async innerCt =>
                 {
-                    PostId = post.PostId,
-                    FarmerId = post.FarmerId,
-                    PricePerTree = post.PricePerYear,
-                    TotalQuantity = post.TreeQuantity,
-                    AvailableQuantity = post.TreeQuantity,
-                    Status = TreeListingStatuses.Active,
-                    CreatedAt = DateTime.Now,
-                    UpdatedAt = DateTime.Now,
-                };
-                await _treeListingService.AddAsync(newTreeListing, ct);
+                    post.Status = status;
+                    post.UpdatedAt = DateTime.Now;
+                    _unitOfWork.Posts.Update(post);
+                    await _unitOfWork.SaveChangesAsync(innerCt);
+                    var checkList = await _treeListingService.GetByPostIdAsync(id, false, innerCt);
+                    if (post.Status.Equals(PostStatuses.Approved) && checkList == null)
+                    {
+                        var newTreeListing = new TreeListing
+                        {
+                            PostId = post.PostId,
+                            FarmerId = post.FarmerId,
+                            PricePerTree = post.PricePerYear,
+                            TotalQuantity = post.TreeQuantity,
+                            AvailableQuantity = post.TreeQuantity,
+                            Status = TreeListingStatuses.Active,
+                            CreatedAt = DateTime.Now,
+                            UpdatedAt = DateTime.Now,
+                        };
+                        await _treeListingService.AddAsync(newTreeListing, innerCt);
+                        await _unitOfWork.SaveChangesAsync(innerCt);
+                    }
+                    else if (post.Status.Equals(PostStatuses.Approved) && checkList != null)
+                    {
+                        var checkQuantity = checkList.TotalQuantity - checkList.AvailableQuantity + post.TreeQuantity;
+                        var newTreeListing = new TreeListing
+                        {
+                            ListingId = checkList.ListingId,
+                            PostId = post.PostId,
+                            FarmerId = post.FarmerId,
+                            PricePerTree = post.PricePerYear,
+                            TotalQuantity = checkQuantity,
+                            AvailableQuantity = post.TreeQuantity,
+                            Status = TreeListingStatuses.Active,
+                            CreatedAt = checkList.CreatedAt,
+                            UpdatedAt = DateTime.Now,
+                        };
+                        _treeListingService.UpdateAsync(newTreeListing);
+                        await _unitOfWork.SaveChangesAsync(innerCt);
+                    }
+                    else if (post.Status.Equals(PostStatuses.Canceled) && checkList != null)
+                    {
+                        var newTreeListing = new TreeListing
+                        {
+                            ListingId = checkList.ListingId,
+                            PostId = post.PostId,
+                            FarmerId = post.FarmerId,
+                            PricePerTree = post.PricePerYear,
+                            TotalQuantity = post.TreeQuantity,
+                            AvailableQuantity = post.TreeQuantity,
+                            Status = TreeListingStatuses.Removed,
+                            CreatedAt = checkList.CreatedAt,
+                            UpdatedAt = DateTime.Now,
+                        };
+                        _treeListingService.UpdateAsync(newTreeListing);
+                        await _unitOfWork.SaveChangesAsync(innerCt);
+                    }
+                    
+                }, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Cập nhật trạng thái post thất bại");
+                return new AuthResponseDto { Success = false, Message = "Cập nhật trạng thái post thất bại" };
             }
             return new AuthResponseDto { Success = true, Message = "Cập nhật trạng thái của postId: " + id + " thành công" };
         }

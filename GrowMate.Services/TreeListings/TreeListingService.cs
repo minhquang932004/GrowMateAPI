@@ -23,22 +23,9 @@ namespace GrowMate.Services.TreeListings
             _logger = logger;
         }
 
-        public async Task<bool> AddAsync(TreeListing treeListing, CancellationToken ct = default)
+        public async Task AddAsync(TreeListing treeListing, CancellationToken ct = default)
         {
-            try
-            {
-                await _unitOfWork.ExecuteInTransactionAsync(async innerCt =>
-                {
-                    await _unitOfWork.TreeListings.AddAsync(treeListing, innerCt);
-                    await _unitOfWork.SaveChangesAsync(innerCt);
-                }, ct);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Tạo post thất bại");
-                return false;
-            }
-            return true;
+            await _unitOfWork.TreeListings.AddAsync(treeListing, ct);
         }
 
         public Task<PageResult<TreeListing>> GetAllAsync(int page, int pageSize, CancellationToken ct = default)
@@ -109,6 +96,11 @@ namespace GrowMate.Services.TreeListings
                     CreatedAt = a.CreatedAt
                 }).ToList() ?? new List<TreeResponse>(),
             };
+        }
+
+        public void UpdateAsync(TreeListing treeListing)
+        {
+            _unitOfWork.TreeListings.UpdateAsync(treeListing);
         }
     }
 }
