@@ -2,6 +2,8 @@
 using GrowMate.Services.Farmers;
 using GrowMate.Services.Posts;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 
 namespace GrowMateWebAPIs.Controllers
 {
@@ -18,20 +20,9 @@ namespace GrowMateWebAPIs.Controllers
             _farmerService = farmerService;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest request, CancellationToken ct)
-        {
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(new { message = errors });
-            }
-            var result = await _postService.CreatePostAsync(request, ct);
-            if (result.Success) return CreatedAtAction(nameof(CreatePost), result);
-            return BadRequest(result);
-        }
-
+        // Read endpoints remain public
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAllPosts([FromQuery] int? postId, [FromQuery] int? farmerId,
             [FromQuery] int page = 1, [FromQuery] int pageSize = 3, CancellationToken ct = default)
         {
@@ -59,17 +50,63 @@ namespace GrowMateWebAPIs.Controllers
             return Ok(allPosts);
         }
 
+        // Create requires Farmer role
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest request, CancellationToken ct)
+        {
+            if (!User.IsInRole("Farmer"))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new
+                {
+                    success = false,
+                    message = "You are not allowed to do this function."
+                });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { message = errors });
+            }
+            var result = await _postService.CreatePostAsync(request, ct);
+            if (result.Success) return CreatedAtAction(nameof(CreatePost), result);
+            return BadRequest(result);
+        }
+
+        // Delete requires Farmer or Admin
         [HttpDelete("{id:int}")]
+        [Authorize]
         public async Task<IActionResult> DeletePost(int id, CancellationToken ct)
         {
+            if (!User.IsInRole("Farmer") && !User.IsInRole("Admin"))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new
+                {
+                    success = false,
+                    message = "You are not allowed to do this function."
+                });
+            }
+
             var result = await _postService.DeletePostAsync(id, ct);
             if (result.Success) return Ok(result);
             return BadRequest(result);
         }
 
+        // Update requires Farmer or Admin
         [HttpPut("{id:int}")]
+        [Authorize]
         public async Task<IActionResult> UpdatePost(int id, [FromBody] CreatePostRequest request, CancellationToken ct)
         {
+            if (!User.IsInRole("Farmer") && !User.IsInRole("Admin"))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new
+                {
+                    success = false,
+                    message = "You are not allowed to do this function."
+                });
+            }
+
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
@@ -80,9 +117,20 @@ namespace GrowMateWebAPIs.Controllers
             return BadRequest(result);
         }
 
+        // Status change typically Admin-only
         [HttpPut("{id:int}/status")]
+        [Authorize]
         public async Task<IActionResult> UpdatePostStatus(int id, [FromQuery] string status, CancellationToken ct)
         {
+            if (!User.IsInRole("Admin"))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new
+                {
+                    success = false,
+                    message = "You are not allowed to do this function."
+                });
+            }
+
             var result = await _postService.UpdatePostStatusAsync(id, status, ct);
             if (result.Success) return Ok(result);
             return BadRequest(result);
