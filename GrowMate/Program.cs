@@ -52,6 +52,7 @@ builder.Services.AddScoped<IMediaService, MediaService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<ITreeListingService, TreeListingService>();
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 
 
 

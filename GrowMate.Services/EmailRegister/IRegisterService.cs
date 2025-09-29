@@ -7,5 +7,6 @@ namespace GrowMate.Services.EmailRegister
     {
         Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request, CancellationToken ct = default);
         Task<AuthResponseDto> VerifyEmailAsync(VerifyEmailRequestDto request, CancellationToken ct = default);
+        Task<AuthResponseDto> ResendVerificationCodeAsync(ResendVerificationRequestDto request, CancellationToken ct = default);
     }
 }

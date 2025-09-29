@@ -128,5 +128,67 @@ namespace GrowMate.Services.EmailRegister
                 Message = "Email verified successfully."
             };
         }
+
+        public async Task<AuthResponseDto> ResendVerificationCodeAsync(ResendVerificationRequestDto request, CancellationToken ct = default)
+        {
+            var email = request.Email.Trim().ToLowerInvariant();
+            var user = await _unitOfWork.Users.GetByEmailAsync(email, includeCustomer: false, ct);
+            if (user is null)
+            {
+                return new AuthResponseDto { Success = false, Message = "User not found." };
+            }
+
+            if (user.IsActive == true)
+            {
+                return new AuthResponseDto { Success = false, Message = "Email already verified." };
+            }
+
+            // Simple cooldown to avoid abuse (60s between resends)
+            var latest = await _unitOfWork.EmailVerifications.GetLatestUnverifiedAsync(user.UserId, ct);
+            if (latest is not null)
+            {
+                var nextAllowedAt = latest.CreatedAt.AddMinutes(1);
+                if (DateTime.UtcNow < nextAllowedAt)
+                {
+                    var remaining = (int)Math.Ceiling((nextAllowedAt - DateTime.UtcNow).TotalSeconds);
+                    return new AuthResponseDto
+                    {
+                        Success = false,
+                        Message = $"Please wait {remaining} seconds before requesting another verification code."
+                    };
+                }
+            }
+
+            // Remove old unverified codes
+            await _unitOfWork.EmailVerifications.DeleteUnverifiedByUserAsync(user.UserId, ct);
+
+            // Create new code
+            var code = RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+            var verification = new EmailVerification
+            {
+                UserId = user.UserId,
+                CodeHash = BCrypt.Net.BCrypt.HashPassword(code),
+                ExpiresAt = DateTime.UtcNow.AddMinutes(10),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.EmailVerifications.AddAsync(verification, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            // Send email
+            var subject = "GrowMate - Verify your email";
+            var body = $@"
+                <p>Hello {System.Net.WebUtility.HtmlEncode(user.FullName)},</p>
+                <p>Your verification code is: <strong>{code}</strong></p>
+                <p>This code will expire in 10 minutes.</p>";
+
+            await _emailService.SendEmailAsync(user.Email, subject, body);
+
+            return new AuthResponseDto
+            {
+                Success = true,
+                Message = "A new verification code has been sent to your email."
+            };
+        }
     }
 }

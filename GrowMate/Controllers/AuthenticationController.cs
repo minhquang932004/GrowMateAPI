@@ -15,13 +15,13 @@ namespace GrowMateWebAPIs.Controllers
     {
         private readonly IRegisterService _registerService;
         private readonly ILoginService _loginService;
-        //private readonly ILoginWithGoogleService _loginWithGoogleService;
+        private readonly IPasswordResetService _passwordResetService;
 
-        public AuthenticationController(IRegisterService registerService, ILoginService loginService)
+        public AuthenticationController(IRegisterService registerService, ILoginService loginService, IPasswordResetService passwordResetService)
         {
             _registerService = registerService;
             _loginService = loginService;
-            //_loginWithGoogleService = loginWithGoogleService;
+            _passwordResetService = passwordResetService;
         }
 
         [HttpPost("register")]
@@ -35,6 +35,34 @@ namespace GrowMateWebAPIs.Controllers
         public async Task<IActionResult> VerifyEmail(VerifyEmailRequestDto request)
         {
             var result = await _registerService.VerifyEmailAsync(request);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("resend-verification")]
+        public async Task<IActionResult> ResendVerification(ResendVerificationRequestDto request, CancellationToken ct)
+        {
+            var result = await _registerService.ResendVerificationCodeAsync(request, ct);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequestDto request, CancellationToken ct)
+        {
+            var result = await _passwordResetService.RequestResetAsync(request, ct);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequestDto request, CancellationToken ct)
+        {
+            var result = await _passwordResetService.ResetPasswordAsync(request, ct);
+
+            if (result.Success)
+            {
+                // Remove stale JWT cookie so the client doesn't carry an invalid token
+                Response.Cookies.Delete("Token");
+            }
+
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
@@ -62,7 +90,6 @@ namespace GrowMateWebAPIs.Controllers
                 if (!result.Succeeded)
                 {
                     return Unauthorized("Đăng nhập Google thất bại");
-
                 }
 
                 var email = result.Principal.FindFirstValue(ClaimTypes.Email);
