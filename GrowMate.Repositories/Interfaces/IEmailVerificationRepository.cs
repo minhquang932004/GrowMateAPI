@@ -1,3 +1,4 @@
+using GrowMate.Models;
 using GrowMate.Repositories.Models;
 
 namespace GrowMate.Repositories.Interfaces

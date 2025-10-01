@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace GrowMate.Repositories.Models;
+namespace GrowMate.Models;
 
 public partial class User
 {
@@ -29,11 +29,11 @@ public partial class User
 
     public virtual Customer Customer { get; set; }
 
+    public virtual ICollection<EmailVerification> EmailVerifications { get; set; } = new List<EmailVerification>();
+
     public virtual Farmer Farmer { get; set; }
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 
     public virtual ICollection<PostComment> PostComments { get; set; } = new List<PostComment>();
-
-    public virtual ICollection<EmailVerification> EmailVerifications { get; set; } = new List<EmailVerification>();
 }

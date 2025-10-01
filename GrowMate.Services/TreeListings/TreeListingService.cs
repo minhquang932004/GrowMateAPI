@@ -1,4 +1,5 @@
 ﻿using GrowMate.Contracts.Responses;
+using GrowMate.Models;
 using GrowMate.Repositories.Extensions;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Repositories.Models;

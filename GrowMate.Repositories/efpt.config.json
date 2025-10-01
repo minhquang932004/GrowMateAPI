@@ -4,6 +4,7 @@
    "ContextNamespace": null,
    "FilterSchemas": false,
    "IncludeConnectionString": true,
+   "MinimumProductVersion": "2.6.0",
    "ModelNamespace": null,
    "OutputContextPath": null,
    "OutputPath": "Models",
@@ -23,7 +24,19 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[cart_items]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[carts]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[customers]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[EmailVerifications]",
          "ObjectType": 0
       },
       {
@@ -43,6 +56,14 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[order_items]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[orders]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[payments]",
          "ObjectType": 0
       },
@@ -55,11 +76,31 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[product_categories]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[product_types]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[products]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[shipments]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[tree_listings]",
          "ObjectType": 0
       },
       {
          "Name": "[dbo].[trees]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[units]",
          "ObjectType": 0
       },
       {

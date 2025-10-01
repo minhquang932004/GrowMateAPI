@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using GrowMate.Models;
 using GrowMate.Repositories.Models;
 using GrowMate.Repositories.Models.Roles;
 using Microsoft.Extensions.Configuration;

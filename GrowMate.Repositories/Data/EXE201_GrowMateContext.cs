@@ -2,7 +2,7 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
-using GrowMate.Repositories.Models;
+using GrowMate.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace GrowMate.Repositories.Data;
@@ -22,7 +22,13 @@ public partial class EXE201_GrowMateContext : DbContext
 
     public virtual DbSet<Camera> Cameras { get; set; }
 
+    public virtual DbSet<Cart> Carts { get; set; }
+
+    public virtual DbSet<CartItem> CartItems { get; set; }
+
     public virtual DbSet<Customer> Customers { get; set; }
+
+    public virtual DbSet<EmailVerification> EmailVerifications { get; set; }
 
     public virtual DbSet<Farmer> Farmers { get; set; }
 
@@ -32,19 +38,32 @@ public partial class EXE201_GrowMateContext : DbContext
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
+    public virtual DbSet<Order> Orders { get; set; }
+
+    public virtual DbSet<OrderItem> OrderItems { get; set; }
+
     public virtual DbSet<Payment> Payments { get; set; }
 
     public virtual DbSet<Post> Posts { get; set; }
 
     public virtual DbSet<PostComment> PostComments { get; set; }
 
+    public virtual DbSet<Product> Products { get; set; }
+
+    public virtual DbSet<ProductCategory> ProductCategories { get; set; }
+
+    public virtual DbSet<ProductType> ProductTypes { get; set; }
+
+    public virtual DbSet<Shipment> Shipments { get; set; }
+
     public virtual DbSet<Tree> Trees { get; set; }
 
     public virtual DbSet<TreeListing> TreeListings { get; set; }
 
+    public virtual DbSet<Unit> Units { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
-    public virtual DbSet<EmailVerification> EmailVerifications { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,6 +72,10 @@ public partial class EXE201_GrowMateContext : DbContext
             entity.HasKey(e => e.AdoptionId).HasName("PK__adoption__8A58034587467DD0");
 
             entity.ToTable("adoptions");
+
+            entity.HasIndex(e => e.CustomerId, "IX_adoptions_customer_id");
+
+            entity.HasIndex(e => e.TreeId, "IX_adoptions_tree_id");
 
             entity.Property(e => e.AdoptionId).HasColumnName("adoption_id");
             entity.Property(e => e.CreatedAt)
@@ -110,28 +133,86 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasConstraintName("FK_cameras_trees");
         });
 
-        modelBuilder.Entity<Customer>(entity =>
+        modelBuilder.Entity<Cart>(entity =>
         {
-            entity.HasKey(e => e.CustomerId).HasName("PK__customer__CD65CB851E551743");
-            entity.ToTable("customers");
+            entity.HasKey(e => e.CartId).HasName("PK__carts__2EF52A278B8E2711");
 
-            entity.Property(e => e.CustomerId)
-                .HasColumnName("customer_id"); // identity by default in SQL Server when migrating
+            entity.ToTable("carts");
 
-            entity.Property(e => e.UserId)
-                .HasColumnName("user_id");
+            entity.HasIndex(e => new { e.CustomerId, e.Status }, "IX_carts_customer_status");
 
-            entity.HasIndex(e => e.UserId).IsUnique();
-
+            entity.Property(e => e.CartId).HasColumnName("cart_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+            entity.Property(e => e.CustomerId).HasColumnName("customer_id");
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasDefaultValue("active")
+                .HasColumnName("status");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
 
+            entity.HasOne(d => d.Customer).WithMany(p => p.Carts)
+                .HasForeignKey(d => d.CustomerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_carts_customers");
+        });
+
+        modelBuilder.Entity<CartItem>(entity =>
+        {
+            entity.HasKey(e => e.CartItemId).HasName("PK__cart_ite__5D9A6C6E864523B0");
+
+            entity.ToTable("cart_items");
+
+            entity.HasIndex(e => new { e.CartId, e.ProductId }, "UQ_cart_items_cart_product").IsUnique();
+
+            entity.Property(e => e.CartItemId).HasColumnName("cart_item_id");
+            entity.Property(e => e.CartId).HasColumnName("cart_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.ProductId).HasColumnName("product_id");
+            entity.Property(e => e.Quantity)
+                .HasDefaultValue(1)
+                .HasColumnName("quantity");
+            entity.Property(e => e.UnitPrice)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("unit_price");
+
+            entity.HasOne(d => d.Cart).WithMany(p => p.CartItems)
+                .HasForeignKey(d => d.CartId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_cart_items_carts");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.CartItems)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_cart_items_products");
+        });
+
+        modelBuilder.Entity<Customer>(entity =>
+        {
+            entity.HasKey(e => e.CustomerId).HasName("PK__customer__CD65CB851E551743");
+
+            entity.ToTable("customers");
+
+            entity.HasIndex(e => e.UserId, "IX_customers_user_id").IsUnique();
+
+            entity.Property(e => e.CustomerId).HasColumnName("customer_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
             entity.Property(e => e.ShippingAddress).HasColumnName("shipping_address");
-
+            entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.WalletBalance)
-                .HasDefaultValue(0.00m)
+                .HasDefaultValue(0.0m)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("wallet_balance");
 
@@ -141,37 +222,49 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasConstraintName("FK_customers_users");
         });
 
+        modelBuilder.Entity<EmailVerification>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__EmailVer__3214EC07D6D2C8E3");
+
+            entity.HasIndex(e => e.UserId, "IX_EmailVerifications_UserId");
+
+            entity.Property(e => e.CodeHash).IsRequired();
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.ExpiresAt).HasColumnType("datetime");
+            entity.Property(e => e.VerifiedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.User).WithMany(p => p.EmailVerifications)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_EmailVerifications_Users");
+        });
+
         modelBuilder.Entity<Farmer>(entity =>
         {
             entity.HasKey(e => e.FarmerId).HasName("PK__farmers__C61558250D572FE6");
+
             entity.ToTable("farmers");
 
-            entity.Property(e => e.FarmerId)
-                .HasColumnName("farmer_id"); // identity by default in SQL Server when migrating
+            entity.HasIndex(e => e.UserId, "IX_farmers_user_id").IsUnique();
 
-            entity.Property(e => e.UserId)
-                .HasColumnName("user_id");
-
-            entity.HasIndex(e => e.UserId).IsUnique();
-
+            entity.Property(e => e.FarmerId).HasColumnName("farmer_id");
             entity.Property(e => e.ContactPhone)
                 .HasMaxLength(20)
                 .HasColumnName("contact_phone");
-
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
-
             entity.Property(e => e.FarmAddress)
                 .IsRequired()
                 .HasColumnName("farm_address");
-
             entity.Property(e => e.FarmName)
                 .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("farm_name");
-
+            entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.VerificationStatus)
                 .HasMaxLength(50)
                 .HasDefaultValue("pending")
@@ -189,6 +282,12 @@ public partial class EXE201_GrowMateContext : DbContext
 
             entity.ToTable("media");
 
+            entity.HasIndex(e => e.PostId, "IX_media_post_id");
+
+            entity.HasIndex(e => e.ProductId, "IX_media_product_id");
+
+            entity.HasIndex(e => e.ReportId, "IX_media_report_id");
+
             entity.Property(e => e.MediaId).HasColumnName("media_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -202,6 +301,7 @@ public partial class EXE201_GrowMateContext : DbContext
                 .IsRequired()
                 .HasColumnName("media_url");
             entity.Property(e => e.PostId).HasColumnName("post_id");
+            entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.ReportId).HasColumnName("report_id");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -211,6 +311,10 @@ public partial class EXE201_GrowMateContext : DbContext
             entity.HasOne(d => d.Post).WithMany(p => p.Media)
                 .HasForeignKey(d => d.PostId)
                 .HasConstraintName("FK_media_posts");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.Media)
+                .HasForeignKey(d => d.ProductId)
+                .HasConstraintName("FK_media_products");
 
             entity.HasOne(d => d.Report).WithMany(p => p.Media)
                 .HasForeignKey(d => d.ReportId)
@@ -222,6 +326,8 @@ public partial class EXE201_GrowMateContext : DbContext
             entity.HasKey(e => e.ReportId).HasName("PK__monthly___779B7C58AB17BD28");
 
             entity.ToTable("monthly_reports");
+
+            entity.HasIndex(e => e.FarmerId, "IX_monthly_reports_farmer_id");
 
             entity.HasIndex(e => new { e.AdoptionId, e.ReportMonth, e.ReportYear }, "UQ_report").IsUnique();
 
@@ -263,6 +369,8 @@ public partial class EXE201_GrowMateContext : DbContext
 
             entity.ToTable("notifications");
 
+            entity.HasIndex(e => e.UserId, "IX_notifications_user_id");
+
             entity.Property(e => e.NotificationId).HasColumnName("notification_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -286,13 +394,142 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasConstraintName("FK_notifications_users");
         });
 
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.HasKey(e => e.OrderId).HasName("PK__orders__465962292B93F49D");
+
+            entity.ToTable("orders");
+
+            entity.HasIndex(e => new { e.CustomerId, e.Status }, "IX_orders_customer_status");
+
+            entity.HasIndex(e => new { e.SellerId, e.Status }, "IX_orders_seller_status");
+
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Currency)
+                .IsRequired()
+                .HasMaxLength(10)
+                .HasDefaultValue("VND")
+                .HasColumnName("currency");
+            entity.Property(e => e.CustomerId).HasColumnName("customer_id");
+            entity.Property(e => e.Note).HasColumnName("note");
+            entity.Property(e => e.PaymentStatus)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasDefaultValue("unpaid")
+                .HasColumnName("payment_status");
+            entity.Property(e => e.SellerId).HasColumnName("seller_id");
+            entity.Property(e => e.ShipAddress)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("ship_address");
+            entity.Property(e => e.ShipCity)
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnName("ship_city");
+            entity.Property(e => e.ShipCountry)
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasDefaultValue("VN")
+                .HasColumnName("ship_country");
+            entity.Property(e => e.ShipFullName)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("ship_full_name");
+            entity.Property(e => e.ShipPhone)
+                .IsRequired()
+                .HasMaxLength(20)
+                .HasColumnName("ship_phone");
+            entity.Property(e => e.ShipPostalCode)
+                .HasMaxLength(20)
+                .HasColumnName("ship_postal_code");
+            entity.Property(e => e.ShipState)
+                .HasMaxLength(100)
+                .HasColumnName("ship_state");
+            entity.Property(e => e.ShippingFee)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("shipping_fee");
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasDefaultValue("pending")
+                .HasColumnName("status");
+            entity.Property(e => e.Subtotal)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("subtotal");
+            entity.Property(e => e.TotalAmount)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("total_amount");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.Orders)
+                .HasForeignKey(d => d.CustomerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_orders_customers");
+
+            entity.HasOne(d => d.Seller).WithMany(p => p.Orders)
+                .HasForeignKey(d => d.SellerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_orders_farmers");
+        });
+
+        modelBuilder.Entity<OrderItem>(entity =>
+        {
+            entity.HasKey(e => e.OrderItemId).HasName("PK__order_it__3764B6BC8003678F");
+
+            entity.ToTable("order_items");
+
+            entity.HasIndex(e => e.OrderId, "IX_order_items_order_id");
+
+            entity.Property(e => e.OrderItemId).HasColumnName("order_item_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.ProductId).HasColumnName("product_id");
+            entity.Property(e => e.ProductName)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("product_name");
+            entity.Property(e => e.Quantity).HasColumnName("quantity");
+            entity.Property(e => e.TotalPrice)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("total_price");
+            entity.Property(e => e.UnitPrice)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("unit_price");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.OrderItems)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_order_items_orders");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.OrderItems)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_order_items_products");
+        });
+
         modelBuilder.Entity<Payment>(entity =>
         {
             entity.HasKey(e => e.PaymentId).HasName("PK__payments__ED1FC9EAB0E84E7F");
 
             entity.ToTable("payments");
 
-            entity.HasIndex(e => e.TransactionReference, "UQ__payments__F0DAF2E8EF3F0A58").IsUnique();
+            entity.HasIndex(e => e.AdoptionId, "IX_payments_adoption_id");
+
+            entity.HasIndex(e => e.OrderId, "IX_payments_order_id");
+
+            entity.HasIndex(e => e.TransactionReference, "UQ__payments__F0DAF2E8EF3F0A58")
+                .IsUnique()
+                .HasFilter("([transaction_reference] IS NOT NULL)");
 
             entity.Property(e => e.PaymentId).HasColumnName("payment_id");
             entity.Property(e => e.AdoptionId).HasColumnName("adoption_id");
@@ -303,10 +540,14 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.PaymentMethod)
                 .IsRequired()
                 .HasMaxLength(50)
                 .HasColumnName("payment_method");
+            entity.Property(e => e.SourceType)
+                .HasMaxLength(20)
+                .HasColumnName("source_type");
             entity.Property(e => e.Status)
                 .HasMaxLength(50)
                 .HasDefaultValue("pending")
@@ -317,8 +558,11 @@ public partial class EXE201_GrowMateContext : DbContext
 
             entity.HasOne(d => d.Adoption).WithMany(p => p.Payments)
                 .HasForeignKey(d => d.AdoptionId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_payments_adoptions");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.Payments)
+                .HasForeignKey(d => d.OrderId)
+                .HasConstraintName("FK_payments_orders");
         });
 
         modelBuilder.Entity<Post>(entity =>
@@ -326,6 +570,8 @@ public partial class EXE201_GrowMateContext : DbContext
             entity.HasKey(e => e.PostId).HasName("PK__posts__3ED78766B83518DA");
 
             entity.ToTable("posts");
+
+            entity.HasIndex(e => e.FarmerId, "IX_posts_farmer_id");
 
             entity.Property(e => e.PostId).HasColumnName("post_id");
             entity.Property(e => e.CreatedAt)
@@ -387,6 +633,10 @@ public partial class EXE201_GrowMateContext : DbContext
 
             entity.ToTable("post_comments");
 
+            entity.HasIndex(e => e.PostId, "IX_post_comments_post_id");
+
+            entity.HasIndex(e => e.UserId, "IX_post_comments_user_id");
+
             entity.Property(e => e.CommentId).HasColumnName("comment_id");
             entity.Property(e => e.CommentContent)
                 .IsRequired()
@@ -413,11 +663,184 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasConstraintName("FK_comments_users");
         });
 
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.HasKey(e => e.ProductId).HasName("PK__products__47027DF59467260A");
+
+            entity.ToTable("products");
+
+            entity.HasIndex(e => new { e.FarmerId, e.Status }, "IX_products_farmer_status");
+
+            entity.HasIndex(e => e.ProductTypeId, "IX_products_product_type_id");
+
+            entity.HasIndex(e => e.UnitId, "IX_products_unit_id");
+
+            entity.HasIndex(e => e.Slug, "UQ__products__32DD1E4C9F47EDF6").IsUnique();
+
+            entity.Property(e => e.ProductId).HasColumnName("product_id");
+            entity.Property(e => e.CategoryId).HasColumnName("category_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.FarmerId).HasColumnName("farmer_id");
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("name");
+            entity.Property(e => e.Price)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("price");
+            entity.Property(e => e.ProductTypeId).HasColumnName("product_type_id");
+            entity.Property(e => e.Slug)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("slug");
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasDefaultValue("draft")
+                .HasColumnName("status");
+            entity.Property(e => e.Stock).HasColumnName("stock");
+            entity.Property(e => e.UnitId).HasColumnName("unit_id");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Category).WithMany(p => p.Products)
+                .HasForeignKey(d => d.CategoryId)
+                .HasConstraintName("FK_products_product_categories");
+
+            entity.HasOne(d => d.Farmer).WithMany(p => p.Products)
+                .HasForeignKey(d => d.FarmerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_products_farmers");
+
+            entity.HasOne(d => d.ProductType).WithMany(p => p.Products)
+                .HasForeignKey(d => d.ProductTypeId)
+                .HasConstraintName("FK_products_product_types");
+
+            entity.HasOne(d => d.Unit).WithMany(p => p.Products)
+                .HasForeignKey(d => d.UnitId)
+                .HasConstraintName("FK_products_units");
+        });
+
+        modelBuilder.Entity<ProductCategory>(entity =>
+        {
+            entity.HasKey(e => e.CategoryId).HasName("PK__product___D54EE9B4F83E7DB1");
+
+            entity.ToTable("product_categories");
+
+            entity.HasIndex(e => e.Slug, "UQ__product___32DD1E4C421674EF").IsUnique();
+
+            entity.Property(e => e.CategoryId).HasColumnName("category_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("name");
+            entity.Property(e => e.Slug)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("slug");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<ProductType>(entity =>
+        {
+            entity.HasKey(e => e.ProductTypeId).HasName("PK__product___6EED3ED6718B2627");
+
+            entity.ToTable("product_types");
+
+            entity.HasIndex(e => e.Slug, "UQ__product___32DD1E4C9F91CF0E").IsUnique();
+
+            entity.Property(e => e.ProductTypeId).HasColumnName("product_type_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Description)
+                .HasMaxLength(255)
+                .HasColumnName("description");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.Slug)
+                .IsRequired()
+                .HasMaxLength(150)
+                .HasColumnName("slug");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<Shipment>(entity =>
+        {
+            entity.HasKey(e => e.ShipmentId).HasName("PK__shipment__41466E596F08E3A2");
+
+            entity.ToTable("shipments");
+
+            entity.HasIndex(e => e.OrderId, "IX_shipments_order_id");
+
+            entity.HasIndex(e => e.TrackingNumber, "UQ__shipment__B2C338B708A415E7").IsUnique();
+
+            entity.Property(e => e.ShipmentId).HasColumnName("shipment_id");
+            entity.Property(e => e.Carrier)
+                .HasMaxLength(100)
+                .HasColumnName("carrier");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.DeliveredAt)
+                .HasColumnType("datetime")
+                .HasColumnName("delivered_at");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.ShippedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("shipped_at");
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasDefaultValue("pending")
+                .HasColumnName("status");
+            entity.Property(e => e.TrackingNumber)
+                .HasMaxLength(100)
+                .HasColumnName("tracking_number");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.Shipments)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_shipments_orders");
+        });
+
         modelBuilder.Entity<Tree>(entity =>
         {
             entity.HasKey(e => e.TreeId).HasName("PK__trees__B80FA6985DB09352");
 
             entity.ToTable("trees");
+
+            entity.HasIndex(e => e.ListingId, "IX_trees_listing_id");
 
             entity.HasIndex(e => e.UniqueCode, "UQ__trees__8E12EA40E90B1E6D").IsUnique();
 
@@ -456,6 +879,8 @@ public partial class EXE201_GrowMateContext : DbContext
 
             entity.ToTable("tree_listings");
 
+            entity.HasIndex(e => e.FarmerId, "IX_tree_listings_farmer_id");
+
             entity.HasIndex(e => e.PostId, "UQ__tree_lis__3ED787671EAC50EE").IsUnique();
 
             entity.Property(e => e.ListingId).HasColumnName("listing_id");
@@ -488,6 +913,36 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasForeignKey<TreeListing>(d => d.PostId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_listings_posts");
+        });
+
+        modelBuilder.Entity<Unit>(entity =>
+        {
+            entity.HasKey(e => e.UnitId).HasName("PK__units__D3AF5BD772B3BE07");
+
+            entity.ToTable("units");
+
+            entity.HasIndex(e => e.Code, "UQ__units__357D4CF9E13B94FC").IsUnique();
+
+            entity.Property(e => e.UnitId).HasColumnName("unit_id");
+            entity.Property(e => e.Code)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasColumnName("code");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -527,31 +982,6 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
-        });
-
-        modelBuilder.Entity<EmailVerification>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__EmailVer__3214EC07D6D2C8E3");
-            entity.ToTable("EmailVerifications");
-            entity.Property(e => e.Id).HasColumnName("Id");
-            entity.Property(e => e.UserId).HasColumnName("UserId");
-            entity.Property(e => e.CodeHash)
-                .IsRequired()
-                .HasColumnName("CodeHash");
-            entity.Property(e => e.ExpiresAt)
-                .HasColumnType("datetime")
-                .HasColumnName("ExpiresAt");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime")
-                .HasColumnName("CreatedAt");
-            entity.Property(e => e.VerifiedAt)
-                .HasColumnType("datetime")
-                .HasColumnName("VerifiedAt");
-            entity.HasOne(d => d.User).WithMany(p => p.EmailVerifications)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_EmailVerifications_Users");
         });
 
         OnModelCreatingPartial(modelBuilder);

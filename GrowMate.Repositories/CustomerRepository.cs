@@ -1,4 +1,5 @@
-﻿using GrowMate.Repositories.Data;
+﻿using GrowMate.Models;
+using GrowMate.Repositories.Data;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Repositories.Models;
 using Microsoft.EntityFrameworkCore;

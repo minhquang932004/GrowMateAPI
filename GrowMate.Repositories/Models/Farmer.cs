@@ -3,13 +3,12 @@
 using System;
 using System.Collections.Generic;
 
-namespace GrowMate.Repositories.Models;
+namespace GrowMate.Models;
 
 public partial class Farmer
 {
     public int FarmerId { get; set; }
 
-    // New explicit FK to Users
     public int UserId { get; set; }
 
     public string FarmName { get; set; }
@@ -22,11 +21,15 @@ public partial class Farmer
 
     public DateTime? CreatedAt { get; set; }
 
-    public virtual User User { get; set; }
-
     public virtual ICollection<MonthlyReport> MonthlyReports { get; set; } = new List<MonthlyReport>();
+
+    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
 
     public virtual ICollection<Post> Posts { get; set; } = new List<Post>();
 
+    public virtual ICollection<Product> Products { get; set; } = new List<Product>();
+
     public virtual ICollection<TreeListing> TreeListings { get; set; } = new List<TreeListing>();
+
+    public virtual User User { get; set; }
 }

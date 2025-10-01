@@ -1,4 +1,6 @@
-﻿namespace GrowMate.Repositories.Models.Roles
+﻿using GrowMate.Models;
+
+namespace GrowMate.Repositories.Models.Roles
 {
     public static class RoleExtensions
     {

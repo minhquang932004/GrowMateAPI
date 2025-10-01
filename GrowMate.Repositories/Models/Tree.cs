@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace GrowMate.Repositories.Models;
+namespace GrowMate.Models;
 
 public partial class Tree
 {

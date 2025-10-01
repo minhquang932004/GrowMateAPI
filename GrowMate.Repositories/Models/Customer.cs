@@ -3,13 +3,12 @@
 using System;
 using System.Collections.Generic;
 
-namespace GrowMate.Repositories.Models;
+namespace GrowMate.Models;
 
 public partial class Customer
 {
     public int CustomerId { get; set; }
 
-    // New explicit FK to Users
     public int UserId { get; set; }
 
     public string ShippingAddress { get; set; }
@@ -20,6 +19,9 @@ public partial class Customer
 
     public virtual ICollection<Adoption> Adoptions { get; set; } = new List<Adoption>();
 
-    // Rename to a clearer navigation name
+    public virtual ICollection<Cart> Carts { get; set; } = new List<Cart>();
+
+    public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+
     public virtual User User { get; set; }
 }

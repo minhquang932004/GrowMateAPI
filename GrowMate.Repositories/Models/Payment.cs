@@ -3,13 +3,13 @@
 using System;
 using System.Collections.Generic;
 
-namespace GrowMate.Repositories.Models;
+namespace GrowMate.Models;
 
 public partial class Payment
 {
     public int PaymentId { get; set; }
 
-    public int AdoptionId { get; set; }
+    public int? AdoptionId { get; set; }
 
     public decimal Amount { get; set; }
 
@@ -21,5 +21,11 @@ public partial class Payment
 
     public DateTime? CreatedAt { get; set; }
 
+    public int? OrderId { get; set; }
+
+    public string SourceType { get; set; }
+
     public virtual Adoption Adoption { get; set; }
+
+    public virtual Order Order { get; set; }
 }

@@ -1,4 +1,5 @@
-﻿using GrowMate.Repositories.Extensions;
+﻿using GrowMate.Models;
+using GrowMate.Repositories.Extensions;
 using GrowMate.Repositories.Models;
 using System;
 using System.Collections.Generic;

@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace GrowMate.Repositories.Models;
+namespace GrowMate.Models;
 
 public partial class Medium
 {
@@ -21,7 +21,11 @@ public partial class Medium
 
     public DateTime? UpdatedAt { get; set; }
 
+    public int? ProductId { get; set; }
+
     public virtual Post Post { get; set; }
+
+    public virtual Product Product { get; set; }
 
     public virtual MonthlyReport Report { get; set; }
 }

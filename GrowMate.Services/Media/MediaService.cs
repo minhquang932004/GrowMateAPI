@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using GrowMate.Contracts.Requests;
+using GrowMate.Models;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Repositories.Models;
 

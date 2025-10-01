@@ -1,5 +1,6 @@
 ﻿using GrowMate.Contracts.Requests;
 using GrowMate.Contracts.Responses;
+using GrowMate.Models;
 using GrowMate.Repositories.Extensions;
 using GrowMate.Repositories.Models;
 using System;
