@@ -110,8 +110,8 @@ namespace GrowMate.Services.Posts
                     await _unitOfWork.Posts.AddAsync(newPost, innerCt);
                     await _unitOfWork.SaveChangesAsync(innerCt);
 
-                    await _mediaService.CreateMediaAsync(newPost.PostId,null,null, request.CreateMediaPostRequests, innerCt);
-                    await _unitOfWork.SaveChangesAsync(innerCt);
+                    if (request.Media != null && request.Media.Count > 0)
+                        await _mediaService.CreateMediaAsync(request.Media, postId: newPost.PostId, ct: innerCt);
                 }, ct);
             }
             catch (Exception ex)
@@ -162,12 +162,12 @@ namespace GrowMate.Services.Posts
                     post.HarvestFrequency = request.HarvestFrequency;
                     post.TreeQuantity = request.TreeQuantity;
                     post.Description = request.Description;
-                    post.Status = PostStatuses.Pending;          // <- was "PENDING"
+                    post.Status = PostStatuses.Pending;
                     post.UpdatedAt = DateTime.Now;
 
                     _unitOfWork.Posts.Update(post);
 
-                    await _mediaService.ReplacePostMediaAsync(id, request.CreateMediaPostRequests, innerCt);
+                    await _mediaService.ReplacePostMediaAsync(id, request.Media, innerCt);
                     await _unitOfWork.SaveChangesAsync(innerCt);
                 }, ct);
             }

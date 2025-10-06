@@ -18,7 +18,10 @@ namespace GrowMate.Controllers
             _userAccountService = userAccountService;
         }
 
-        // ADMIN: create arbitrary users
+        /// <summary>
+        /// Admin: Create a new user account.
+        /// </summary>
+        /// <remarks>Role: Admin only</remarks>
         [HttpPost("by-admin")]
         [Authorize]
         public async Task<IActionResult> CreateUserByAdmin([FromBody] CreateUserByAdminRequest request, CancellationToken ct)
@@ -49,9 +52,10 @@ namespace GrowMate.Controllers
             return BadRequest(result);
         }
 
-        // READ:
-        // - Admin can query by any criteria (id/email/list)
-        // - Non-admin can only read their own profile by id
+        /// <summary>
+        /// Get user(s) by id, email, or list. Admin can query all, non-admin can only get their own profile.
+        /// </summary>
+        /// <remarks>Role: Admin (all users), Non-admin (self only)</remarks>
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> GetUsers([FromQuery] int? id, [FromQuery] string? email, [FromQuery] string? phone, [FromQuery] bool includeCustomer = false, [FromQuery] int page = 1, [FromQuery] int pageSize = 3, CancellationToken ct = default)
@@ -107,7 +111,10 @@ namespace GrowMate.Controllers
             return Ok(userList);
         }
 
-        // SELF or ADMIN: update
+        /// <summary>
+        /// Update user profile (self or admin).
+        /// </summary>
+        /// <remarks>Role: Admin (any user), Non-admin (self only)</remarks>
         [HttpPut("{id:int}")]
         [Authorize]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserRequest request, CancellationToken ct)
@@ -137,7 +144,10 @@ namespace GrowMate.Controllers
             return BadRequest(result);
         }
 
-        // ADMIN: update any user (role/active etc.)
+        /// <summary>
+        /// Admin: Update any user (role, active status, etc).
+        /// </summary>
+        /// <remarks>Role: Admin only</remarks>
         [HttpPut("by-admin/{id:int}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateUserByAdmin(int id, [FromBody] UpdateUserByAdminRequest request, CancellationToken ct)
@@ -155,7 +165,10 @@ namespace GrowMate.Controllers
             return BadRequest(result);
         }
 
-        // ADMIN: delete user
+        /// <summary>
+        /// Admin: Delete a user by ID.
+        /// </summary>
+        /// <remarks>Role: Admin only</remarks>
         [HttpDelete("{id:int}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteUser(int id, CancellationToken ct)
@@ -168,7 +181,10 @@ namespace GrowMate.Controllers
             return BadRequest(result);
         }
 
-        // SELF or ADMIN: change password
+        /// <summary>
+        /// Change user password (self or admin).
+        /// </summary>
+        /// <remarks>Role: Admin (any user), Non-admin (self only)</remarks>
         [HttpPut("user-password/{id:int}")]
         [Authorize]
         public async Task<IActionResult> UpdateUserPassword(int id, UpdateUserPwdRequest request, CancellationToken ct)

@@ -27,7 +27,9 @@
 
         public string Description { get; set; }
 
-        public List<CreateMediaRequest>? CreateMediaPostRequests { get; set; }
+        //public List<CreateMediaRequest>? CreateMediaPostRequests { get; set; }
+
+        public List<MediaItemDto>? Media { get; set; }
 
     }
 

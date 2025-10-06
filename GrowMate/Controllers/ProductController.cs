@@ -1,5 +1,4 @@
 using GrowMate.Contracts.Requests;
-using GrowMate.Models;
 using GrowMate.Repositories.Models.Statuses;
 using GrowMate.Services.Products;
 using Microsoft.AspNetCore.Authorization;
@@ -18,6 +17,10 @@ namespace GrowMateWebAPIs.Controllers
             _productService = productService;
         }
 
+        /// <summary>
+        /// List all approved products for customers (paged).
+        /// </summary>
+        /// <remarks>Role: Anonymous (anyone can access)</remarks>
         // Public: list approved products for customers (paged) -> DTO
         [HttpGet("approved")]
         [AllowAnonymous]
@@ -29,6 +32,10 @@ namespace GrowMateWebAPIs.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// List all pending products for admin review (paged).
+        /// </summary>
+        /// <remarks>Role: Admin only</remarks>
         // Admin: list pending products for review (entity list kept as-is)
         [HttpGet("pending")]
         [Authorize]
@@ -49,6 +56,10 @@ namespace GrowMateWebAPIs.Controllers
             return Ok(result);
         }
 
+        /// <summary>
+        /// Get product details by ID.
+        /// </summary>
+        /// <remarks>Role: Anonymous (only admin can see non-approved products)</remarks>
         // Public: product details -> DTO
         // If not approved, only Admin can see it (customers get 404)
         [HttpGet("{id:int}")]
@@ -66,44 +77,49 @@ namespace GrowMateWebAPIs.Controllers
             return Ok(dto);
         }
 
-        // Farmer: create a product (auto PENDING) - unchanged
+        /// <summary>
+        /// Create a new product (auto PENDING).
+        /// </summary>
+        /// <remarks>Role: Farmer only</remarks>
+        // Farmer: create a product (auto will be PENDING) - unchanged
         [HttpPost]
-        [Authorize]
-        public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request, CancellationToken ct = default)
+        [Authorize(Roles = "Farmer")]
+        public async Task<IActionResult> CreateProduct([FromBody] CreateProductRequest request, CancellationToken ct)
         {
-            if (!User.IsInRole("Farmer"))
-            {
-                return StatusCode(StatusCodes.Status403Forbidden, new
-                {
-                    success = false,
-                    message = "You are not allowed to do this function."
-                });
-            }
-
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(new { message = errors });
-            }
-
-            var product = new Product
-            {
-                FarmerId = request.FarmerId,
-                CategoryId = request.CategoryId,
-                ProductTypeId = request.ProductTypeId,
-                UnitId = request.UnitId,
-                Name = request.Name,
-                Slug = request.Slug,
-                Description = request.Description,
-                Price = request.Price,
-                Stock = request.Stock
-                // Do NOT set Status, CreatedAt, UpdatedAt, or navigation properties here
-            };
-
-            var id = await _productService.CreateProductAsync(product, ct);
-            return CreatedAtAction(nameof(GetProductById), new { id }, new { id });
+            var productId = await _productService.CreateProductAsync(request, ct);
+            return Ok(new { ProductId = productId });
         }
 
+        /// <summary>
+        /// Update a product and its media.
+        /// </summary>
+        /// <remarks>Role: Farmer only</remarks>
+        [HttpPut("{id:int}")]
+        [Authorize(Roles = "Farmer")]
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] CreateProductRequest request, CancellationToken ct)
+        {
+            var ok = await _productService.UpdateProductAsync(id, request, ct);
+            if (!ok) return NotFound($"ProductId {id} not found.");
+            return Ok(new { success = true, message = "Product updated." });
+        }
+
+        /// <summary>
+        /// Delete a product by ID.
+        /// </summary>
+        /// <remarks>Role: Farmer or Admin</remarks>
+        [HttpDelete("{id:int}")]
+        [Authorize(Roles = "Farmer,Admin")]
+        public async Task<IActionResult> DeleteProduct(int id, CancellationToken ct)
+        {
+            var ok = await _productService.DeleteProductAsync(id, ct);
+            if (!ok) return NotFound($"ProductId {id} not found.");
+            return Ok(new { success = true, message = "Product deleted." });
+        }
+
+        /// <summary>
+        /// Update the status of a product (APPROVE/REJECT/CANCEL).
+        /// </summary>
+        /// <remarks>Role: Admin only</remarks>
         // Admin: approve/reject/cancel product - unchanged
         [HttpPut("{id:int}/status")]
         [Authorize]

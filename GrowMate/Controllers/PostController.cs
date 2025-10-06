@@ -20,7 +20,10 @@ namespace GrowMateWebAPIs.Controllers
             _farmerService = farmerService;
         }
 
-        // Read endpoints remain public
+        /// <summary>
+        /// Get all posts, or filter by postId or farmerId.
+        /// </summary>
+        /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetAllPosts([FromQuery] int? postId, [FromQuery] int? farmerId,
@@ -50,7 +53,10 @@ namespace GrowMateWebAPIs.Controllers
             return Ok(allPosts);
         }
 
-        // Create requires Farmer role
+        /// <summary>
+        /// Create a new post.
+        /// </summary>
+        /// <remarks>Role: Farmer only</remarks>
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest request, CancellationToken ct)
@@ -74,7 +80,10 @@ namespace GrowMateWebAPIs.Controllers
             return BadRequest(result);
         }
 
-        // Delete requires Farmer or Admin
+        /// <summary>
+        /// Delete a post by ID.
+        /// </summary>
+        /// <remarks>Role: Farmer or Admin</remarks>
         [HttpDelete("{id:int}")]
         [Authorize]
         public async Task<IActionResult> DeletePost(int id, CancellationToken ct)
@@ -93,7 +102,10 @@ namespace GrowMateWebAPIs.Controllers
             return BadRequest(result);
         }
 
-        // Update requires Farmer or Admin
+        /// <summary>
+        /// Update a post by ID (Include its Media).
+        /// </summary>
+        /// <remarks>Role: Farmer or Admin</remarks>
         [HttpPut("{id:int}")]
         [Authorize]
         public async Task<IActionResult> UpdatePost(int id, [FromBody] CreatePostRequest request, CancellationToken ct)
@@ -117,10 +129,13 @@ namespace GrowMateWebAPIs.Controllers
             return BadRequest(result);
         }
 
-        // Status change typically Admin-only
+        /// <summary>
+        /// Update the status of a post (APPROVE/REJECT/CANCEL).
+        /// </summary>
+        /// <remarks>Role: Admin only</remarks>
         [HttpPut("{id:int}/status")]
         [Authorize]
-        public async Task<IActionResult> UpdatePostStatus(int id, [FromQuery] string status, CancellationToken ct)
+        public async Task<IActionResult> UpdatePostStatus(int id, [FromQuery] string status, CancellationToken ct = default)
         {
             if (!User.IsInRole("Admin"))
             {

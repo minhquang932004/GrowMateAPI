@@ -19,5 +19,12 @@ namespace GrowMate.Contracts.Requests
         [Required]
         public int Stock { get; set; }
 
+        public List<MediaItemDto> Media { get; set; } // Property for media
+    }
+
+    public class MediaItemDto
+    {
+        public string MediaUrl { get; set; }
+        public string MediaType { get; set; } // Should match your MediaType enum (e.g., "Image", "Video")
     }
 }

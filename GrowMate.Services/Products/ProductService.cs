@@ -1,8 +1,10 @@
+using GrowMate.Contracts.Requests;
 using GrowMate.Contracts.Responses;
 using GrowMate.Models;
 using GrowMate.Repositories.Extensions;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Repositories.Models.Statuses;
+using GrowMate.Repositories.Models.Constraints; // For MediaType enum
 using Microsoft.Extensions.Logging;
 
 namespace GrowMate.Services.Products
@@ -11,24 +13,55 @@ namespace GrowMate.Services.Products
     {
         private readonly IUnitOfWork _uow;
         private readonly ILogger<ProductService> _logger;
+        private readonly IMediaService _mediaService;
 
-        public ProductService(IUnitOfWork uow, ILogger<ProductService> logger)
+        public ProductService(IUnitOfWork uow, ILogger<ProductService> logger, IMediaService mediaService)
         {
             _uow = uow;
             _logger = logger;
+            _mediaService = mediaService;
         }
 
         // Farmer creates a product -> PENDING (mirrors CreatePost)
-        public async Task<int> CreateProductAsync(Product product, CancellationToken ct = default)
+        public async Task<int> CreateProductAsync(CreateProductRequest request, CancellationToken ct = default)
         {
-            product.Status = ProductStatuses.Pending;
-            product.CreatedAt = DateTime.Now;
-            product.UpdatedAt = DateTime.Now;
+            var product = new Product
+            {
+                Name = request.Name,
+                Description = request.Description,
+                // ... other fields
+                Status = ProductStatuses.Pending,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
 
             await _uow.ExecuteInTransactionAsync(async token =>
             {
                 await _uow.Products.AddAsync(product, token);
                 await _uow.SaveChangesAsync(token);
+
+                if (request.Media != null)
+                {
+                    foreach (var mediaItem in request.Media)
+                    {
+                        // Validate media type
+                        if (!Enum.TryParse<MediaType>(mediaItem.MediaType, out var mediaTypeEnum))
+                        {
+                            throw new ArgumentException($"Invalid media type: {mediaItem.MediaType}");
+                        }
+
+                        var medium = new Medium
+                        {
+                            ProductId = product.ProductId,
+                            MediaUrl = mediaItem.MediaUrl,
+                            MediaType = mediaTypeEnum.ToString(), // Store as string for compatibility
+                            CreatedAt = DateTime.Now,
+                            UpdatedAt = DateTime.Now
+                        };
+                        await _uow.Media.AddAsync(medium, token);
+                    }
+                    await _uow.SaveChangesAsync(token);
+                }
             }, ct);
 
             return product.ProductId;
@@ -47,20 +80,37 @@ namespace GrowMate.Services.Products
             => _uow.Products.GetByIdAsync(id, includeCollections, ct);
 
         // Farmer updates product -> reset to PENDING (mirrors UpdatePost)
-        public async Task<bool> UpdateProductAsync(int id, Action<Product> applyChanges, CancellationToken ct = default)
+        public async Task<bool> UpdateProductAsync(int id, CreateProductRequest request, CancellationToken ct = default)
         {
             var product = await _uow.Products.GetByIdAsync(id, includeCollections: false, ct);
-            if (product is null) return false;
+            if (product == null)
+                return false;
 
             try
             {
                 await _uow.ExecuteInTransactionAsync(async innerCt =>
                 {
-                    applyChanges(product);
+                    // Update product fields
+                    product.FarmerId = request.FarmerId;
+                    product.CategoryId = request.CategoryId;
+                    product.ProductTypeId = request.ProductTypeId;
+                    product.UnitId = request.UnitId;
+                    product.Name = request.Name;
+                    product.Slug = request.Slug;
+                    product.Description = request.Description;
+                    product.Price = request.Price;
+                    product.Stock = request.Stock;
                     product.Status = ProductStatuses.Pending;
                     product.UpdatedAt = DateTime.Now;
 
                     _uow.Products.Update(product);
+
+                    // Replace all media for this product
+                    if (request.Media != null)
+                    {
+                        await _mediaService.ReplaceProductMediaAsync(id, request.Media, innerCt);
+                    }
+
                     await _uow.SaveChangesAsync(innerCt);
                 }, ct);
             }
@@ -126,6 +176,37 @@ namespace GrowMate.Services.Products
                 }).ToList() ?? new List<MediaResponse>(),
                 MainImageUrl = p.Media?.FirstOrDefault()?.MediaUrl
             };
+        }
+
+        public async Task<bool> DeleteProductAsync(int id, CancellationToken ct = default)
+        {
+            var product = await _uow.Products.GetByIdAsync(id, includeCollections: false, ct);
+            if (product == null)
+                return false;
+
+            try
+            {
+                await _uow.ExecuteInTransactionAsync(async innerCt =>
+                {
+                    product.Status = ProductStatuses.Canceled; // Mark as canceled (soft delete)
+                    product.UpdatedAt = DateTime.Now;
+                    _uow.Products.Update(product);
+
+                    // Optionally, remove all associated media (Medium/Media)
+                    var mediaList = await _uow.Media.GetByProductIdAsync(id, innerCt);
+                    if (mediaList.Any())
+                        _uow.Media.RemoveRange(mediaList);
+
+                    await _uow.SaveChangesAsync(innerCt);
+                }, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete product {ProductId}", id);
+                return false;
+            }
+
+            return true;
         }
 
         // New DTO: Approved list (paged)

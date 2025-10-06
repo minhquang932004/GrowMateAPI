@@ -24,6 +24,10 @@ namespace GrowMateWebAPIs.Controllers
             _passwordResetService = passwordResetService;
         }
 
+        /// <summary>
+        /// Register a new user account.
+        /// </summary>
+        /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterRequestDto request, CancellationToken ct)
         {
@@ -31,6 +35,10 @@ namespace GrowMateWebAPIs.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        /// <summary>
+        /// Verify a user's email address using a verification code.
+        /// </summary>
+        /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpPost("verify-email")]
         public async Task<IActionResult> VerifyEmail(VerifyEmailRequestDto request)
         {
@@ -38,6 +46,10 @@ namespace GrowMateWebAPIs.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        /// <summary>
+        /// Resend the email verification code to a user.
+        /// </summary>
+        /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpPost("resend-verification")]
         public async Task<IActionResult> ResendVerification(ResendVerificationRequestDto request, CancellationToken ct)
         {
@@ -45,6 +57,10 @@ namespace GrowMateWebAPIs.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        /// <summary>
+        /// Request a password reset email.
+        /// </summary>
+        /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordRequestDto request, CancellationToken ct)
         {
@@ -52,6 +68,10 @@ namespace GrowMateWebAPIs.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        /// <summary>
+        /// Reset a user's password using a reset code.
+        /// </summary>
+        /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequestDto request, CancellationToken ct)
         {
@@ -66,6 +86,10 @@ namespace GrowMateWebAPIs.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        /// <summary>
+        /// Log in with email and password.
+        /// </summary>
+        /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequestDto request, CancellationToken ct)
         {
@@ -73,6 +97,10 @@ namespace GrowMateWebAPIs.Controllers
             return result.Success ? Ok(result) : BadRequest(result);
         }
 
+        /// <summary>
+        /// Initiate Google OAuth login.
+        /// </summary>
+        /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpGet("login-google")]
         public IActionResult LoginWithGoogle()
         {
@@ -81,6 +109,10 @@ namespace GrowMateWebAPIs.Controllers
             return Challenge(properties, GoogleDefaults.AuthenticationScheme);
         }
 
+        /// <summary>
+        /// Google OAuth callback endpoint.
+        /// </summary>
+        /// <remarks>Role: Anonymous (used by Google OAuth flow)</remarks>
         [HttpGet("google-callback")]
         public async Task<IActionResult> GoogleCallback(CancellationToken ct)
         {
@@ -102,9 +134,9 @@ namespace GrowMateWebAPIs.Controllers
                 Response.Cookies.Append("Token", user.Token, new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = true, // Bật nếu dùng HTTPS
+                    Secure = true,
                     SameSite = SameSiteMode.None,
-                    Expires = DateTimeOffset.UtcNow.AddDays(3) // Hoặc theo cấu hình
+                    Expires = DateTimeOffset.UtcNow.AddDays(3)
                 });
                 return Redirect(redirectUrl);
             }
