@@ -16,13 +16,15 @@ namespace GrowMate.Services.Media
             _unitOfWork = unitOfWork;
         }
 
-        public Task CreatePostMediaAsync(int postId, IEnumerable<CreateMediaPostRequest>? request, CancellationToken ct = default)
+        public Task CreateMediaAsync(int? postId, int? reportId, int? productId, IEnumerable<CreateMediaRequest>? request, CancellationToken ct = default)
         {
             if (request == null) return Task.CompletedTask;
 
             var media = request.Select(m => new Medium
             {
-                PostId = postId,
+                PostId = postId ?? null,
+                ReportId = reportId ?? null,
+                ProductId = productId ?? null,
                 MediaUrl = m.MediaUrl,
                 MediaType = m.MediaType,
                 CreatedAt = DateTime.Now,
@@ -35,13 +37,13 @@ namespace GrowMate.Services.Media
             return Task.CompletedTask;
         }
 
-        public async Task ReplacePostMediaAsync(int postId, IEnumerable<CreateMediaPostRequest>? request, CancellationToken ct = default)
+        public async Task ReplacePostMediaAsync(int postId, IEnumerable<CreateMediaRequest>? request, CancellationToken ct = default)
         {
             var existing = await _unitOfWork.Media.GetByPostIdAsync(postId, ct);
             if (existing.Count > 0)
                 _unitOfWork.Media.RemoveRange(existing);
 
-            await CreatePostMediaAsync(postId, request, ct);
+            await CreateMediaAsync(postId,0,0, request, ct);
         }
     }
 }

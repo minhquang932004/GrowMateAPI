@@ -110,7 +110,7 @@ namespace GrowMate.Services.Posts
                     await _unitOfWork.Posts.AddAsync(newPost, innerCt);
                     await _unitOfWork.SaveChangesAsync(innerCt);
 
-                    await _mediaService.CreatePostMediaAsync(newPost.PostId, request.CreateMediaPostRequests, innerCt);
+                    await _mediaService.CreateMediaAsync(newPost.PostId,null,null, request.CreateMediaPostRequests, innerCt);
                     await _unitOfWork.SaveChangesAsync(innerCt);
                 }, ct);
             }

@@ -27,16 +27,8 @@
 
         public string Description { get; set; }
 
-        public List<CreateMediaPostRequest>? CreateMediaPostRequests { get; set; }
+        public List<CreateMediaRequest>? CreateMediaPostRequests { get; set; }
 
     }
 
-    public class CreateMediaPostRequest
-    {
-
-        public string MediaUrl { get; set; }
-
-        public string MediaType { get; set; }
-
-    }
 }

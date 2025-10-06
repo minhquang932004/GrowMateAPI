@@ -4,8 +4,8 @@ namespace GrowMate.Services.Media
 {
     public interface IMediaService
     {
-        Task CreatePostMediaAsync(int postId, IEnumerable<CreateMediaPostRequest>? request, CancellationToken ct = default);
-        Task ReplacePostMediaAsync(int postId, IEnumerable<CreateMediaPostRequest>? request, CancellationToken ct = default);
+        Task CreateMediaAsync(int? postId, int? reportId, int? productId, IEnumerable<CreateMediaRequest>? request, CancellationToken ct = default);
+        Task ReplacePostMediaAsync(int postId, IEnumerable<CreateMediaRequest>? request, CancellationToken ct = default);
     }
 
 }
