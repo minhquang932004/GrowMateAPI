@@ -1,6 +1,6 @@
 namespace GrowMate.Contracts.Responses
 {
-    public sealed class MediaResponse
+    public class MediaResponse
     {
         public int MediaId { get; set; }
         public string MediaUrl { get; set; }
