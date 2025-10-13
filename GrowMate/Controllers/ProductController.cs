@@ -1,4 +1,5 @@
 using GrowMate.Contracts.Requests;
+using GrowMate.Contracts.Requests.Product;
 using GrowMate.Repositories.Models.Statuses;
 using GrowMate.Services.Products;
 using Microsoft.AspNetCore.Authorization;

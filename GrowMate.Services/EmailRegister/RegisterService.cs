@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using GrowMate.Contracts.Requests;
+using GrowMate.Contracts.Requests.Auth;
 using GrowMate.Contracts.Responses;
+using GrowMate.Contracts.Responses.Auth;
 using GrowMate.Models;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Repositories.Models;
@@ -19,14 +21,14 @@ namespace GrowMate.Services.EmailRegister
             _emailService = emailService;
         }
 
-        public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request, CancellationToken ct = default)
+        public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
         {
             var email = request.Email.Trim().ToLowerInvariant();
 
             var user = await _unitOfWork.Users.GetByEmailAsync(email, includeCustomer: false, ct);
             if (user is not null && user.IsActive == true)
             {
-                return new AuthResponseDto { Success = false, Message = "Email already registered." };
+                return new AuthResponse { Success = false, Message = "Email already registered." };
             }
 
             if (user is null)
@@ -76,32 +78,32 @@ namespace GrowMate.Services.EmailRegister
 
             await _emailService.SendEmailAsync(user.Email, subject, body);
 
-            return new AuthResponseDto
+            return new AuthResponse
             {
                 Success = true,
                 Message = "Registration successful. Please check your email for the verification code."
             };
         }
 
-        public async Task<AuthResponseDto> VerifyEmailAsync(VerifyEmailRequestDto request, CancellationToken ct = default)
+        public async Task<AuthResponse> VerifyEmailAsync(VerifyEmailRequest request, CancellationToken ct = default)
         {
             var email = request.Email.Trim().ToLowerInvariant();
             var user = await _unitOfWork.Users.GetByEmailAsync(email, includeCustomer: false, ct);
             if (user is null)
             {
-                return new AuthResponseDto { Success = false, Message = "User not found." };
+                return new AuthResponse { Success = false, Message = "User not found." };
             }
 
             var latest = await _unitOfWork.EmailVerifications.GetLatestUnverifiedAsync(user.UserId, ct);
             if (latest is null)
             {
-                return new AuthResponseDto { Success = false, Message = "Verification code is invalid or expired." };
+                return new AuthResponse { Success = false, Message = "Verification code is invalid or expired." };
             }
 
             var ok = BCrypt.Net.BCrypt.Verify(request.Code, latest.CodeHash);
             if (!ok)
             {
-                return new AuthResponseDto { Success = false, Message = "Verification code is incorrect." };
+                return new AuthResponse { Success = false, Message = "Verification code is incorrect." };
             }
 
             latest.VerifiedAt = DateTime.UtcNow;
@@ -123,25 +125,25 @@ namespace GrowMate.Services.EmailRegister
 
             await _unitOfWork.SaveChangesAsync(ct);
 
-            return new AuthResponseDto
+            return new AuthResponse
             {
                 Success = true,
                 Message = "Email verified successfully."
             };
         }
 
-        public async Task<AuthResponseDto> ResendVerificationCodeAsync(ResendVerificationRequestDto request, CancellationToken ct = default)
+        public async Task<AuthResponse> ResendVerificationCodeAsync(ResendVerificationRequest request, CancellationToken ct = default)
         {
             var email = request.Email.Trim().ToLowerInvariant();
             var user = await _unitOfWork.Users.GetByEmailAsync(email, includeCustomer: false, ct);
             if (user is null)
             {
-                return new AuthResponseDto { Success = false, Message = "User not found." };
+                return new AuthResponse { Success = false, Message = "User not found." };
             }
 
             if (user.IsActive == true)
             {
-                return new AuthResponseDto { Success = false, Message = "Email already verified." };
+                return new AuthResponse { Success = false, Message = "Email already verified." };
             }
 
             // Simple cooldown to avoid abuse (60s between resends)
@@ -152,7 +154,7 @@ namespace GrowMate.Services.EmailRegister
                 if (DateTime.UtcNow < nextAllowedAt)
                 {
                     var remaining = (int)Math.Ceiling((nextAllowedAt - DateTime.UtcNow).TotalSeconds);
-                    return new AuthResponseDto
+                    return new AuthResponse
                     {
                         Success = false,
                         Message = $"Please wait {remaining} seconds before requesting another verification code."
@@ -185,7 +187,7 @@ namespace GrowMate.Services.EmailRegister
 
             await _emailService.SendEmailAsync(user.Email, subject, body);
 
-            return new AuthResponseDto
+            return new AuthResponse
             {
                 Success = true,
                 Message = "A new verification code has been sent to your email."

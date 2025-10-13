@@ -1,5 +1,8 @@
 ﻿using GrowMate.Contracts.Requests;
+using GrowMate.Contracts.Requests.Post;  // Add domain-specific namespace for Post requests
 using GrowMate.Contracts.Responses;
+using GrowMate.Contracts.Responses.Auth;  // Add domain-specific namespace for Auth responses
+using GrowMate.Contracts.Responses.Post;  // Add domain-specific namespace for Post responses
 using GrowMate.Models;
 using GrowMate.Repositories.Extensions;
 using GrowMate.Repositories.Interfaces;
@@ -58,7 +61,7 @@ namespace GrowMate.Services.Posts
                 Status = post.Status,
                 CreatedAt = post.CreatedAt,
                 UpdatedAt = post.UpdatedAt,
-                MediaPostList = post.Media?.Select(m => new MediaPostListResponse
+                MediaPostList = post.Media?.Select(m => new MediaPostResponse
                 {
                     MediaId = m.MediaId,
                     PostId = post.PostId,
@@ -66,8 +69,8 @@ namespace GrowMate.Services.Posts
                     MediaType = m.MediaType,
                     CreatedAt = m.CreatedAt,
                     UpdatedAt = m.UpdatedAt
-                }).ToList() ?? new List<MediaPostListResponse>(),
-                PostCommentList = post.PostComments?.Select(c => new PostCommentListResponse
+                }).ToList() ?? new List<MediaPostResponse>(),
+                PostCommentList = post.PostComments?.Select(c => new PostCommentResponse
                 {
                     CommentId = c.CommentId,
                     PostId = c.PostId,
@@ -75,14 +78,14 @@ namespace GrowMate.Services.Posts
                     CommentContent = c.CommentContent,
                     CreatedAt = c.CreatedAt,
                     UpdatedAt = c.UpdatedAt
-                }).ToList() ?? new List<PostCommentListResponse>()
+                }).ToList() ?? new List<PostCommentResponse>()
             };
         }
 
-        public async Task<AuthResponseDto> CreatePostAsync(CreatePostRequest request, CancellationToken ct = default)
+        public async Task<AuthResponse> CreatePostAsync(CreatePostRequest request, CancellationToken ct = default)
         {
             if (!await _farmerService.GetFarmerByIdAsync(request.FarmerId))
-                return new AuthResponseDto { Success = false, Message = "Không tìm thấy farmerId: " + request.FarmerId };
+                return new AuthResponse { Success = false, Message = "Không tìm thấy farmerId: " + request.FarmerId };
 
             try
             {
@@ -117,34 +120,34 @@ namespace GrowMate.Services.Posts
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Tạo post thất bại");
-                return new AuthResponseDto { Success = false, Message = "Tạo mới post thất bại" };
+                return new AuthResponse { Success = false, Message = "Tạo mới post thất bại" };
             }
 
-            return new AuthResponseDto { Success = true, Message = "Tạo mới post thành công!" };
+            return new AuthResponse { Success = true, Message = "Tạo mới post thành công!" };
         }
 
-        public async Task<AuthResponseDto> DeletePostAsync(int id, CancellationToken ct = default)
+        public async Task<AuthResponse> DeletePostAsync(int id, CancellationToken ct = default)
         {
             var post = await _unitOfWork.Posts.GetByIdAsync(id, includeCollections: false, ct);
             if (post == null)
-                return new AuthResponseDto { Success = false, Message = "Không tìm thấy postId: " + id };
+                return new AuthResponse { Success = false, Message = "Không tìm thấy postId: " + id };
 
             post.Status = PostStatuses.Canceled;               // <- was "CANCELED"
             post.UpdatedAt = DateTime.Now;
             _unitOfWork.Posts.Update(post);
             await _unitOfWork.SaveChangesAsync(ct);
 
-            return new AuthResponseDto { Success = true, Message = "Đã CANCELED postId: " + id + " thành công" };
+            return new AuthResponse { Success = true, Message = "Đã CANCELED postId: " + id + " thành công" };
         }
 
-        public async Task<AuthResponseDto> UpdatePostAsync(int id, CreatePostRequest request, CancellationToken ct = default)
+        public async Task<AuthResponse> UpdatePostAsync(int id, CreatePostRequest request, CancellationToken ct = default)
         {
             var post = await _unitOfWork.Posts.GetByIdAsync(id, includeCollections: false, ct);
             if (post == null)
-                return new AuthResponseDto { Success = false, Message = "Không tìm thấy postId: " + id };
+                return new AuthResponse { Success = false, Message = "Không tìm thấy postId: " + id };
 
             if (!await _farmerService.GetFarmerByIdAsync(request.FarmerId))
-                return new AuthResponseDto { Success = false, Message = "Không tìm thấy farmerId: " + request.FarmerId };
+                return new AuthResponse { Success = false, Message = "Không tìm thấy farmerId: " + request.FarmerId };
 
             try
             {
@@ -174,18 +177,18 @@ namespace GrowMate.Services.Posts
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Cập nhật post thất bại");
-                return new AuthResponseDto { Success = false, Message = "Cập nhật post thất bại" };
+                return new AuthResponse { Success = false, Message = "Cập nhật post thất bại" };
             }
 
-            return new AuthResponseDto { Success = true, Message = "Cập nhật postId: " + id + " thành công" };
+            return new AuthResponse { Success = true, Message = "Cập nhật postId: " + id + " thành công" };
         }
 
-        public async Task<AuthResponseDto> UpdatePostStatusAsync(int id, string status, CancellationToken ct = default)
+        public async Task<AuthResponse> UpdatePostStatusAsync(int id, string status, CancellationToken ct = default)
         {
             var post = await _unitOfWork.Posts.GetByIdAsync(id, includeCollections: false, ct);
             if (post == null)
             {
-                return new AuthResponseDto { Success = false, Message = "Không tìm thấy postId: " + id };
+                return new AuthResponse { Success = false, Message = "Không tìm thấy postId: " + id };
             }
             try
             {
@@ -253,9 +256,9 @@ namespace GrowMate.Services.Posts
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Cập nhật trạng thái post thất bại");
-                return new AuthResponseDto { Success = false, Message = "Cập nhật trạng thái post thất bại" };
+                return new AuthResponse { Success = false, Message = "Cập nhật trạng thái post thất bại" };
             }
-            return new AuthResponseDto { Success = true, Message = "Cập nhật trạng thái của postId: " + id + " thành công" };
+            return new AuthResponse { Success = true, Message = "Cập nhật trạng thái của postId: " + id + " thành công" };
         }
     }
 }

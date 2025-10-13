@@ -18,7 +18,10 @@ namespace GrowMate.Repositories
             IFarmerRepository farmers,
             IMediaRepository media,
             ITreeListingRepository treeListing,
-            IProductRepository products
+            IProductRepository products,
+            IOrderRepository orders,
+            ICartRepository carts,
+            ICartItemRepository cartItems
         )
         {
             _dbContext = dbContext;
@@ -30,6 +33,9 @@ namespace GrowMate.Repositories
             Media = media;
             TreeListings = treeListing;
             Products = products;
+            Orders = orders;
+            Carts = carts;
+            CartItems = cartItems;
         }
 
         public IUserRepository Users { get; }
@@ -40,6 +46,9 @@ namespace GrowMate.Repositories
         public IMediaRepository Media { get; }
         public ITreeListingRepository TreeListings { get; }
         public IProductRepository Products { get; }
+        public IOrderRepository Orders { get; }
+        public ICartRepository Carts { get; }
+        public ICartItemRepository CartItems { get; }
 
         public Task<int> SaveChangesAsync(CancellationToken ct = default)
             => _dbContext.SaveChangesAsync(ct);

@@ -1,4 +1,5 @@
 ﻿using GrowMate.Contracts.Requests;
+using GrowMate.Contracts.Requests.Auth;
 using GrowMate.Services.Authentication;
 using GrowMate.Services.EmailRegister;
 using Microsoft.AspNetCore.Authentication;
@@ -29,7 +30,7 @@ namespace GrowMateWebAPIs.Controllers
         /// </summary>
         /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterRequestDto request, CancellationToken ct)
+        public async Task<IActionResult> Register(RegisterRequest request, CancellationToken ct)
         {
             var result = await _registerService.RegisterAsync(request, ct);
             return result.Success ? Ok(result) : BadRequest(result);
@@ -40,7 +41,7 @@ namespace GrowMateWebAPIs.Controllers
         /// </summary>
         /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpPost("verify-email")]
-        public async Task<IActionResult> VerifyEmail(VerifyEmailRequestDto request)
+        public async Task<IActionResult> VerifyEmail(VerifyEmailRequest request)
         {
             var result = await _registerService.VerifyEmailAsync(request);
             return result.Success ? Ok(result) : BadRequest(result);
@@ -51,7 +52,7 @@ namespace GrowMateWebAPIs.Controllers
         /// </summary>
         /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpPost("resend-verification")]
-        public async Task<IActionResult> ResendVerification(ResendVerificationRequestDto request, CancellationToken ct)
+        public async Task<IActionResult> ResendVerification(ResendVerificationRequest request, CancellationToken ct)
         {
             var result = await _registerService.ResendVerificationCodeAsync(request, ct);
             return result.Success ? Ok(result) : BadRequest(result);
@@ -62,7 +63,7 @@ namespace GrowMateWebAPIs.Controllers
         /// </summary>
         /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequestDto request, CancellationToken ct)
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken ct)
         {
             var result = await _passwordResetService.RequestResetAsync(request, ct);
             return result.Success ? Ok(result) : BadRequest(result);
@@ -73,7 +74,7 @@ namespace GrowMateWebAPIs.Controllers
         /// </summary>
         /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword(ResetPasswordRequestDto request, CancellationToken ct)
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequest request, CancellationToken ct)
         {
             var result = await _passwordResetService.ResetPasswordAsync(request, ct);
 
@@ -91,7 +92,7 @@ namespace GrowMateWebAPIs.Controllers
         /// </summary>
         /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginRequestDto request, CancellationToken ct)
+        public async Task<IActionResult> Login(LoginRequest request, CancellationToken ct)
         {
             var result = await _loginService.LoginAsync(request, ct);
             return result.Success ? Ok(result) : BadRequest(result);

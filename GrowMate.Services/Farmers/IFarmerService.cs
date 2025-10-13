@@ -1,4 +1,5 @@
 ﻿using GrowMate.Contracts.Requests;
+using GrowMate.Contracts.Requests.Farmer; // Add the domain-specific namespace
 
 namespace GrowMate.Services.Farmers
 {

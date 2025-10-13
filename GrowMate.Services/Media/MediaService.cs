@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Linq;
+// Import both the old and new namespaces to support the transition
 using GrowMate.Contracts.Requests;
 using GrowMate.Contracts.Responses;
+// New domain-specific namespaces
+using GrowMate.Contracts.Requests.Media;
+using GrowMate.Contracts.Responses.Media;
 using GrowMate.Models;
 using GrowMate.Repositories.Extensions;
 using GrowMate.Repositories.Interfaces;
@@ -20,8 +24,8 @@ namespace GrowMate.Services.Media
 
         }
 
-        // Creates media items associated with a post, product, or report
-        public async Task CreateMediaAsync(List<MediaItemDto> mediaItems, int? postId = null, int? productId = null, int? reportId = null, CancellationToken ct = default)
+    // Creates media items associated with a post, product, or report
+        public async Task CreateMediaAsync(List<MediaItemRequest> mediaItems, int? postId = null, int? productId = null, int? reportId = null, CancellationToken ct = default)
         {
             if (mediaItems == null || (postId == null && productId == null && reportId == null))
                 throw new ArgumentException("Media items and at least one association id are required.");
@@ -52,8 +56,8 @@ namespace GrowMate.Services.Media
             await _unitOfWork.SaveChangesAsync(ct);
         }
 
-        // Replaces all media for a post with new media items
-        public async Task ReplacePostMediaAsync(int postId, List<MediaItemDto> newMedia, CancellationToken ct = default)
+    // Replaces all media for a post with new media items
+        public async Task ReplacePostMediaAsync(int postId, List<MediaItemRequest> newMedia, CancellationToken ct = default)
         {
             var existing = await _unitOfWork.Media.GetByPostIdAsync(postId, ct);
             if (existing.Count > 0)
@@ -65,8 +69,8 @@ namespace GrowMate.Services.Media
             await _unitOfWork.SaveChangesAsync(ct);
         }
 
-        // Replaces all media for a product with new media items
-        public async Task ReplaceProductMediaAsync(int productId, List<MediaItemDto> newMedia, CancellationToken ct = default)
+    // Replaces all media for a product with new media items
+        public async Task ReplaceProductMediaAsync(int productId, List<MediaItemRequest> newMedia, CancellationToken ct = default)
         {
             var oldMedia = await _unitOfWork.Media.GetByProductIdAsync(productId, ct);
             if (oldMedia.Any())
@@ -78,8 +82,8 @@ namespace GrowMate.Services.Media
             await _unitOfWork.SaveChangesAsync(ct);
         }
 
-        // Replaces all media for a report with new media items
-        public async Task ReplaceReportMediaAsync(int reportId, List<MediaItemDto> newMedia, CancellationToken ct = default)
+    // Replaces all media for a report with new media items
+        public async Task ReplaceReportMediaAsync(int reportId, List<MediaItemRequest> newMedia, CancellationToken ct = default)
         {
             var existing = await _unitOfWork.Media.GetByReportIdAsync(reportId, ct);
             if (existing.Count > 0)

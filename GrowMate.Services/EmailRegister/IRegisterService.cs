@@ -1,12 +1,12 @@
-using GrowMate.Contracts.Requests;
-using GrowMate.Contracts.Responses;
+using GrowMate.Contracts.Requests.Auth;
+using GrowMate.Contracts.Responses.Auth;
 
 namespace GrowMate.Services.EmailRegister
 {
     public interface IRegisterService
     {
-        Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request, CancellationToken ct = default);
-        Task<AuthResponseDto> VerifyEmailAsync(VerifyEmailRequestDto request, CancellationToken ct = default);
-        Task<AuthResponseDto> ResendVerificationCodeAsync(ResendVerificationRequestDto request, CancellationToken ct = default);
+        Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default);
+        Task<AuthResponse> VerifyEmailAsync(VerifyEmailRequest request, CancellationToken ct = default);
+        Task<AuthResponse> ResendVerificationCodeAsync(ResendVerificationRequest request, CancellationToken ct = default);
     }
 }

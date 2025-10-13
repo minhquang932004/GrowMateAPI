@@ -2,10 +2,12 @@ using GrowMate.Repositories;
 using GrowMate.Repositories.Data;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Services.Authentication;
+using GrowMate.Services.Carts;
 using GrowMate.Services.Customers;
 using GrowMate.Services.EmailRegister;
 using GrowMate.Services.Farmers;
 using GrowMate.Services.Media;
+using GrowMate.Services.Orders;
 using GrowMate.Services.Posts;
 using GrowMate.Services.Products;
 using GrowMate.Services.TreeListings;
@@ -44,6 +46,9 @@ builder.Services.AddScoped<IFarmerRepository, FarmerRepository>();
 builder.Services.AddScoped<IMediaRepository, MediaRepository>();
 builder.Services.AddScoped<ITreeListingRepository, TreeListingRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<ICartRepository, CartRepository>();
+builder.Services.AddScoped<ICartItemRepository, CartItemRepository>();
 
 // DbContext for EF Core tools and runtime
 builder.Services.AddDbContext<EXE201_GrowMateContext>(options =>
@@ -63,6 +68,8 @@ builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<ITreeListingService, TreeListingService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 
 // AuthN/Z

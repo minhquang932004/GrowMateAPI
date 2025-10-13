@@ -1,15 +1,10 @@
-﻿using GrowMate.Contracts.Responses;
+﻿using GrowMate.Contracts.Responses.Tree;
 using GrowMate.Models;
 using GrowMate.Repositories.Extensions;
 using GrowMate.Repositories.Interfaces;
-using GrowMate.Repositories.Models;
-using GrowMate.Services.Posts;
+
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace GrowMate.Services.TreeListings
 {

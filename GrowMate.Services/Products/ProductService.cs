@@ -1,5 +1,9 @@
 using GrowMate.Contracts.Requests;
+using GrowMate.Contracts.Requests.Product; // Add domain-specific namespace for Product requests
+using GrowMate.Contracts.Requests.Media;   // Add domain-specific namespace for Media requests
 using GrowMate.Contracts.Responses;
+using GrowMate.Contracts.Responses.Product; // Add domain-specific namespace for Product responses
+using GrowMate.Contracts.Responses.Media;   // Add domain-specific namespace for Media responses
 using GrowMate.Models;
 using GrowMate.Repositories.Extensions;
 using GrowMate.Repositories.Interfaces;

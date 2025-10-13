@@ -1,5 +1,8 @@
-﻿using GrowMate.Contracts.Requests;
-using GrowMate.Contracts.Responses;
+﻿using GrowMate.Contracts.Requests.Auth;
+using GrowMate.Contracts.Responses.Auth;
+using GrowMate.Contracts.Responses.Customer;
+using GrowMate.Contracts.Responses.Farmer;
+using GrowMate.Contracts.Responses.User;
 using GrowMate.Models;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Repositories.Models;
@@ -31,7 +34,7 @@ namespace GrowMate.Services.Authentication
             _customerRepository = customerRepository;
         }
 
-        public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request, CancellationToken ct = default)
+        public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
         {
             // Field validation can be explicit; not a user-enumeration vector
             if (string.IsNullOrWhiteSpace(request.Email) && string.IsNullOrWhiteSpace(request.Password))
@@ -66,7 +69,7 @@ namespace GrowMate.Services.Authentication
 
             var (token, expiresAt) = _tokenService.GenerateToken(user);
 
-            var userDto = new UserDto
+            var userDto = new UserResponse
             {
                 UserId = user.UserId,
                 Email = user.Email,
@@ -80,10 +83,10 @@ namespace GrowMate.Services.Authentication
                 IsActive = user.IsActive ?? false
             };
 
-            // Populate role-specific info inside UserDto (no top-level duplication)
+            // Populate role-specific info inside UserResponse (no top-level duplication)
             if (user.Role == UserRoles.Customer && user.Customer is not null)
             {
-                userDto.Customer = new CustomerDto
+                userDto.Customer = new CustomerResponse
                 {
                     CustomerId = user.Customer.CustomerId,
                     ShippingAddress = user.Customer.ShippingAddress,
@@ -95,7 +98,7 @@ namespace GrowMate.Services.Authentication
                 var farmer = await _unitOfWork.Farmers.GetByUserIdAsync(user.UserId, ct);
                 if (farmer != null)
                 {
-                    userDto.FarmerResponse = new FarmerResponse
+                    userDto.Farmer = new FarmerResponse
                     {
                         FarmerId = farmer.FarmerId,
                         FarmName = farmer.FarmName,
@@ -106,18 +109,18 @@ namespace GrowMate.Services.Authentication
                 }
             }
 
-            return new LoginResponseDto
+            return new LoginResponse
             {
                 Success = true,
                 Message = "Login successful.",
                 Token = token,
                 ExpiresAt = expiresAt,
                 User = userDto
-                // Customer and FarmerResponse intentionally omitted to avoid duplication
+                // Customer and Farmer intentionally omitted to avoid duplication
             };
         }
 
-        public async Task<LoginResponseDto> LoginWithGoogle(string email, string name, CancellationToken ct = default)
+        public async Task<LoginResponse> LoginWithGoogle(string email, string name, CancellationToken ct = default)
         {
             var account = await _unitOfWork.Users.GetByEmailAsync(email, includeCustomer: false, ct);
 
@@ -160,7 +163,7 @@ namespace GrowMate.Services.Authentication
 
                 var (token, expiresAt) = _tokenService.GenerateToken(account);
 
-                var userDto = new UserDto
+                var userResponse = new UserResponse
                 {
                     UserId = account.UserId,
                     Email = account.Email,
@@ -179,7 +182,7 @@ namespace GrowMate.Services.Authentication
                     var customer = await _unitOfWork.Customers.GetByUserIdAsync(account.UserId, ct);
                     if (customer != null)
                     {
-                        userDto.Customer = new CustomerDto
+                        userResponse.Customer = new CustomerResponse
                         {
                             CustomerId = customer.CustomerId,
                             ShippingAddress = customer.ShippingAddress,
@@ -193,7 +196,7 @@ namespace GrowMate.Services.Authentication
                     var farmer = await _unitOfWork.Farmers.GetByUserIdAsync(account.UserId, ct);
                     if (farmer != null)
                     {
-                        userDto.FarmerResponse = new FarmerResponse
+                        userResponse.Farmer = new FarmerResponse
                         {
                             FarmerId = farmer.FarmerId,
                             FarmName = farmer.FarmName,
@@ -204,13 +207,13 @@ namespace GrowMate.Services.Authentication
                     }
                 }
 
-                return new LoginResponseDto
+                return new LoginResponse
                 {
                     Success = true,
                     Message = "Đăng nhập bằng Google thành công",
                     Token = token,
                     ExpiresAt = expiresAt,
-                    User = userDto
+                    User = userResponse
                 };
             }
             catch (Exception ex)
@@ -220,12 +223,12 @@ namespace GrowMate.Services.Authentication
             }
         }
 
-        private LoginResponseDto Fail(string publicMessage, string detailedMessage, string errorCode)
+        private LoginResponse Fail(string publicMessage, string detailedMessage, string errorCode)
         {
             var correlationId = Guid.NewGuid().ToString("N");
             _logger.LogInformation("Login failed [{CorrelationId}] {Reason}", correlationId, detailedMessage);
             var message = _env.IsDevelopment() ? detailedMessage : publicMessage;
-            return new LoginResponseDto
+            return new LoginResponse
             {
                 Success = false,
                 Message = message,

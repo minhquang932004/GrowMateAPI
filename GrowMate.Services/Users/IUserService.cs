@@ -1,13 +1,9 @@
-﻿using GrowMate.Contracts.Requests;
-using GrowMate.Contracts.Responses;
+﻿using GrowMate.Contracts.Requests.User;
+using GrowMate.Contracts.Responses.Auth;
+using GrowMate.Contracts.Responses.User;
 using GrowMate.Models;
 using GrowMate.Repositories.Extensions;
-using GrowMate.Repositories.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace GrowMate.Services.Users
 {
@@ -15,14 +11,14 @@ namespace GrowMate.Services.Users
     {
         Task<PageResult<User>> GetAllUserAsync(int page, int pageSize, CancellationToken ct = default);
 
-        Task<UserDto> GetUserByIdAsync(int id, bool includeCustomer, CancellationToken ct = default);
+        Task<UserResponse> GetUserByIdAsync(int id, bool includeCustomer, CancellationToken ct = default);
 
-        Task<UserDto> GetUserByEmailAsync(string email, bool includeCustomer, CancellationToken ct = default);
+        Task<UserResponse> GetUserByEmailAsync(string email, bool includeCustomer, CancellationToken ct = default);
 
-        Task<AuthResponseDto> CreateUserByAdminAsync(CreateUserByAdminRequest request, CancellationToken ct = default);
-        Task<AuthResponseDto> UpdateUserAsync(int id, UpdateUserRequest request, CancellationToken ct = default);
-        Task<AuthResponseDto> UpdateUserByAdminAsync(int id, UpdateUserByAdminRequest request, CancellationToken ct = default);
-        Task<AuthResponseDto> DeleteUserAsync(int id, CancellationToken ct = default);
-        Task<AuthResponseDto> UpdateUserPasswordAsync(int id, UpdateUserPwdRequest request, CancellationToken ct = default);
+        Task<AuthResponse> CreateUserByAdminAsync(CreateUserByAdminRequest request, CancellationToken ct = default);
+        Task<AuthResponse> UpdateUserAsync(int id, UpdateUserRequest request, CancellationToken ct = default);
+        Task<AuthResponse> UpdateUserByAdminAsync(int id, UpdateUserByAdminRequest request, CancellationToken ct = default);
+        Task<AuthResponse> DeleteUserAsync(int id, CancellationToken ct = default);
+        Task<AuthResponse> UpdateUserPasswordAsync(int id, UpdateUserPasswordRequest request, CancellationToken ct = default);
     }
 }

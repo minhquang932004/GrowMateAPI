@@ -1,4 +1,5 @@
 ﻿using GrowMate.Contracts.Requests;
+using GrowMate.Contracts.Requests.Customer; // Add the domain-specific namespace
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,20 +1,19 @@
 ﻿using GrowMate.Contracts.Requests;
-using GrowMate.Contracts.Responses;
+using GrowMate.Contracts.Requests.Customer;
+using GrowMate.Contracts.Requests.Farmer;
+using GrowMate.Contracts.Requests.User;
+using GrowMate.Contracts.Responses.Auth;
+using GrowMate.Contracts.Responses.Customer;
+using GrowMate.Contracts.Responses.Farmer;
+using GrowMate.Contracts.Responses.User;
 using GrowMate.Models;
 using GrowMate.Repositories.Extensions;
 using GrowMate.Repositories.Interfaces;
-using GrowMate.Repositories.Models;
 using GrowMate.Repositories.Models.Roles;
-using GrowMate.Services.Authentication;
 using GrowMate.Services.Customers;
 using GrowMate.Services.Farmers;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace GrowMate.Services.Users
 {
@@ -39,12 +38,12 @@ namespace GrowMate.Services.Users
             _farmerService = farmerService;
         }
 
-        public async Task<AuthResponseDto> CreateUserByAdminAsync(CreateUserByAdminRequest request, CancellationToken ct = default)
+        public async Task<AuthResponse> CreateUserByAdminAsync(CreateUserByAdminRequest request, CancellationToken ct = default)
         {
             var emailExist = await _unitOfWork.Users.GetByEmailAsync(request.Email, false, ct);
             if (emailExist != null)
             {
-                return new AuthResponseDto
+                return new AuthResponse
                 {
                     Success = false,
                     Message = "Email này đã sử dụng rồi"
@@ -82,21 +81,21 @@ namespace GrowMate.Services.Users
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Tạo user thất bại");
-                return new AuthResponseDto { Success = false, Message = "Tạo mới user thất bại" };
+                return new AuthResponse { Success = false, Message = "Tạo mới user thất bại" };
             }
-            return new AuthResponseDto
+            return new AuthResponse
             {
                 Success = true,
                 Message = "Tạo mới user thành công!"
             };
         }
 
-        public async Task<AuthResponseDto> DeleteUserAsync(int id, CancellationToken ct = default)
+        public async Task<AuthResponse> DeleteUserAsync(int id, CancellationToken ct = default)
         {
             var user = await _unitOfWork.Users.GetByIdAsync(id, false, ct);
             if (user == null)
             {
-                return new AuthResponseDto
+                return new AuthResponse
                 {
                     Success = false,
                     Message = "Không tìm thấy userId: " + id
@@ -105,7 +104,7 @@ namespace GrowMate.Services.Users
             user.IsActive = false;
             user.UpdatedAt = DateTime.Now;
             await _unitOfWork.SaveChangesAsync(ct);
-            return new AuthResponseDto
+            return new AuthResponse
             {
                 Success = true,
                 Message = "Xóa user: " + id + " thành công!"
@@ -115,96 +114,96 @@ namespace GrowMate.Services.Users
         public Task<PageResult<User>> GetAllUserAsync(int page, int pageSize, CancellationToken ct = default)
             => _unitOfWork.Users.GetAllAsync(page, pageSize, ct);
 
-        public async Task<UserDto> GetUserByEmailAsync(string email, bool includeCustomer, CancellationToken ct = default)
+    public async Task<UserResponse> GetUserByEmailAsync(string email, bool includeCustomer, CancellationToken ct = default)
+    {
+        var user = await _unitOfWork.Users.GetByEmailAsync(email, includeCustomer, ct);
+        if (user == null) return null;
+        if (user.Role.Equals(UserRoles.Customer))
         {
-            var user = await _unitOfWork.Users.GetByEmailAsync(email, includeCustomer, ct);
-            if (user == null) return null;
-            if (user.Role.Equals(UserRoles.Customer))
+            user.Customer = await _unitOfWork.Customers.GetByUserIdAsync(user.UserId, ct);
+        }
+        else if (user.Role.Equals(UserRoles.Farmer))
+        {
+            user.Farmer = await _unitOfWork.Farmers.GetByIdAsync(user.UserId, ct);
+        }
+        var userResponse = new UserResponse
+        {
+            UserId = user.UserId,
+            Email = user.Email,
+            FullName = user.FullName,
+            Phone = user.Phone,
+            Role = user.Role,
+            RoleName = UserRoles.ToName(user.Role),
+            ProfileImageUrl = user.ProfileImageUrl,
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt,
+            IsActive = user.IsActive ?? false,
+            Customer = user.Role.Equals(UserRoles.Customer) && user.Customer != null ? new CustomerResponse
             {
-                user.Customer = await _unitOfWork.Customers.GetByUserIdAsync(user.UserId, ct);
-            }
-            else if (user.Role.Equals(UserRoles.Farmer))
-            {
-                user.Farmer = await _unitOfWork.Farmers.GetByIdAsync(user.UserId, ct);
-            }
-            var userResponse = new UserDto
-            {
-                UserId = user.UserId,
-                Email = user.Email,
-                FullName = user.FullName,
-                Phone = user.Phone,
-                Role = user.Role,
-                RoleName = UserRoles.ToName(user.Role),
-                ProfileImageUrl = user.ProfileImageUrl,
-                CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt,
-                IsActive = user.IsActive ?? false,
-                Customer = user.Role.Equals(UserRoles.Customer) && user.Customer != null ? new CustomerDto
-                {
-                    CustomerId = user.Customer.CustomerId,
-                    ShippingAddress = user.Customer?.ShippingAddress,
-                    WalletBalance = user.Customer?.WalletBalance,
+                CustomerId = user.Customer.CustomerId,
+                ShippingAddress = user.Customer?.ShippingAddress,
+                WalletBalance = user.Customer?.WalletBalance,
 
-                } : null,
-                FarmerResponse = user.Role.Equals(UserRoles.Farmer) && user.Farmer != null ? new FarmerResponse
-                {
-                    FarmerId = user.Farmer.FarmerId,
-                    FarmName = user.Farmer.FarmName,
-                    FarmAddress = user.Farmer.FarmAddress,
-                    ContactPhone = user.Farmer.ContactPhone,
-                } : null
+            } : null,
+            Farmer = user.Role.Equals(UserRoles.Farmer) && user.Farmer != null ? new FarmerResponse
+            {
+                FarmerId = user.Farmer.FarmerId,
+                FarmName = user.Farmer.FarmName,
+                FarmAddress = user.Farmer.FarmAddress,
+                ContactPhone = user.Farmer.ContactPhone,
+            } : null
+        };
+            return userResponse;
+        }
+
+    public async Task<UserResponse> GetUserByIdAsync(int id, bool includeCustomer, CancellationToken ct = default)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(id, includeCustomer, ct);
+        if (user == null) return null;
+        if (user.Role.Equals(UserRoles.Customer))
+        {
+            user.Customer = await _unitOfWork.Customers.GetByUserIdAsync(user.UserId, ct);
+        }
+        else if (user.Role.Equals(UserRoles.Farmer))
+        {
+            user.Farmer = await _unitOfWork.Farmers.GetByUserIdAsync(user.UserId, ct);
+        }
+        var userResponse = new UserResponse
+        {
+            UserId = user.UserId,
+            Email = user.Email,
+            FullName = user.FullName,
+            Phone = user.Phone,
+            Role = user.Role,
+            RoleName = UserRoles.ToName(user.Role),
+            ProfileImageUrl = user.ProfileImageUrl,
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt,
+            IsActive = user.IsActive ?? false,
+            Customer = user.Role.Equals(UserRoles.Customer) && user.Customer != null ? new CustomerResponse
+            {
+                CustomerId = user.Customer.CustomerId,
+                ShippingAddress = user.Customer?.ShippingAddress,
+                WalletBalance = user.Customer?.WalletBalance,
+
+            } : null,
+            Farmer = user.Role.Equals(UserRoles.Farmer) && user.Farmer != null ? new FarmerResponse
+            {
+                FarmerId = user.Farmer.FarmerId,
+                FarmName = user.Farmer.FarmName,
+                FarmAddress = user.Farmer.FarmAddress,
+                ContactPhone = user.Farmer.ContactPhone,
+            } : null
             };
             return userResponse;
         }
 
-        public async Task<UserDto> GetUserByIdAsync(int id, bool includeCustomer, CancellationToken ct = default)
-        {
-            var user = await _unitOfWork.Users.GetByIdAsync(id, includeCustomer, ct);
-            if (user == null) return null;
-            if (user.Role.Equals(UserRoles.Customer))
-            {
-                user.Customer = await _unitOfWork.Customers.GetByUserIdAsync(user.UserId, ct);
-            }
-            else if (user.Role.Equals(UserRoles.Farmer))
-            {
-                user.Farmer = await _unitOfWork.Farmers.GetByUserIdAsync(user.UserId, ct);
-            }
-            var userResponse = new UserDto
-            {
-                UserId = user.UserId,
-                Email = user.Email,
-                FullName = user.FullName,
-                Phone = user.Phone,
-                Role = user.Role,
-                RoleName = UserRoles.ToName(user.Role),
-                ProfileImageUrl = user.ProfileImageUrl,
-                CreatedAt = user.CreatedAt,
-                UpdatedAt = user.UpdatedAt,
-                IsActive = user.IsActive ?? false,
-                Customer = user.Role.Equals(UserRoles.Customer) && user.Customer != null ? new CustomerDto
-                {
-                    CustomerId = user.Customer.CustomerId,
-                    ShippingAddress = user.Customer?.ShippingAddress,
-                    WalletBalance = user.Customer?.WalletBalance,
-
-                } : null,
-                FarmerResponse = user.Role.Equals(UserRoles.Farmer) && user.Farmer != null ? new FarmerResponse
-                {
-                    FarmerId = user.Farmer.FarmerId,
-                    FarmName = user.Farmer.FarmName,
-                    FarmAddress = user.Farmer.FarmAddress,
-                    ContactPhone = user.Farmer.ContactPhone,
-                } : null
-            };
-            return userResponse;
-        }
-
-        public async Task<AuthResponseDto> UpdateUserAsync(int id, UpdateUserRequest request, CancellationToken ct = default)
+        public async Task<AuthResponse> UpdateUserAsync(int id, UpdateUserRequest request, CancellationToken ct = default)
         {
             var user = await _unitOfWork.Users.GetByIdAsync(id, false, ct);
             if (user == null)
             {
-                return new AuthResponseDto
+                return new AuthResponse
                 {
                     Success = false,
                     Message = "Không tìm thấy userId: " + id
@@ -236,21 +235,21 @@ namespace GrowMate.Services.Users
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Cập nhật user thất bại");
-                return new AuthResponseDto { Success = false, Message = "Cập nhật user thất bại" };
+                return new AuthResponse { Success = false, Message = "Cập nhật user thất bại" };
             }
-            return new AuthResponseDto
+            return new AuthResponse
             {
                 Success = true,
                 Message = "Cập nhật user thành công!"
             };
         }
 
-        public async Task<AuthResponseDto> UpdateUserByAdminAsync(int id, UpdateUserByAdminRequest request, CancellationToken ct = default)
+        public async Task<AuthResponse> UpdateUserByAdminAsync(int id, UpdateUserByAdminRequest request, CancellationToken ct = default)
         {
             var user = await _unitOfWork.Users.GetByIdAsync(id, false, ct);
             if (user == null)
             {
-                return new AuthResponseDto
+                return new AuthResponse
                 {
                     Success = false,
                     Message = "Không tìm thấy userId: " + id
@@ -290,21 +289,21 @@ namespace GrowMate.Services.Users
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Cập nhật user thất bại");
-                return new AuthResponseDto { Success = false, Message = "Cập nhật user thất bại" };
+                return new AuthResponse { Success = false, Message = "Cập nhật user thất bại" };
             }
-            return new AuthResponseDto
+            return new AuthResponse
             {
                 Success = true,
                 Message = "Cập nhật user thành công!"
             };
         }
 
-        public async Task<AuthResponseDto> UpdateUserPasswordAsync(int id, UpdateUserPwdRequest request, CancellationToken ct = default)
+        public async Task<AuthResponse> UpdateUserPasswordAsync(int id, UpdateUserPasswordRequest request, CancellationToken ct = default)
         {
             var user = await _unitOfWork.Users.GetByIdAsync(id, false ,ct);
             if (user == null)
             {
-                return new AuthResponseDto
+                return new AuthResponse
                 {
                     Success = false,
                     Message = "Không tìm thấy userId: " + id
@@ -312,22 +311,22 @@ namespace GrowMate.Services.Users
             }
             //Verify thì phải mật khẩu của DTO, mật khẩu dưới DB
             //Ngược lại sẽ sai
-            bool checkPassword = BCrypt.Net.BCrypt.Verify(request.oldPassword, user.Password);
+            bool checkPassword = BCrypt.Net.BCrypt.Verify(request.OldPassword, user.Password);
             if (!checkPassword)
             {
-                return new AuthResponseDto
+                return new AuthResponse
                 {
                     Success = false,
                     Message = "Mật khẩu cũ không đúng "
                 };
             }
-            user.Password = BCrypt.Net.BCrypt.HashPassword(request.newPassword);
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             user.UpdatedAt = DateTime.Now;
             await _unitOfWork.SaveChangesAsync(ct);
-            return new AuthResponseDto
+            return new AuthResponse
             {
                 Success = true,
-                Message = "Đổi mật khẩu thành công, mật khẩu mới: " + request.newPassword
+                Message = "Đổi mật khẩu thành công, mật khẩu mới: " + request.NewPassword
             };
         }
 

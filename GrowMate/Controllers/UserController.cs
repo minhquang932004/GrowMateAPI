@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using GrowMate.Contracts.Requests.User;
 
 namespace GrowMate.Controllers
 {
@@ -187,7 +188,7 @@ namespace GrowMate.Controllers
         /// <remarks>Role: Admin (any user), Non-admin (self only)</remarks>
         [HttpPut("user-password/{id:int}")]
         [Authorize]
-        public async Task<IActionResult> UpdateUserPassword(int id, UpdateUserPwdRequest request, CancellationToken ct)
+        public async Task<IActionResult> UpdateUserPassword(int id, UpdateUserPasswordRequest request, CancellationToken ct)
         {
             if (!ModelState.IsValid)
             {

@@ -1,4 +1,5 @@
 ﻿using GrowMate.Contracts.Requests;
+using GrowMate.Contracts.Requests.Customer; // Add the domain-specific namespace
 using GrowMate.Models;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Repositories.Models;

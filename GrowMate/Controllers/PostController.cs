@@ -4,6 +4,7 @@ using GrowMate.Services.Posts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using GrowMate.Contracts.Requests.Post;
 
 namespace GrowMateWebAPIs.Controllers
 {
