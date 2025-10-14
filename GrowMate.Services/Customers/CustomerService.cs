@@ -1,13 +1,6 @@
-﻿using GrowMate.Contracts.Requests;
-using GrowMate.Contracts.Requests.Customer; // Add the domain-specific namespace
+﻿using GrowMate.Contracts.Requests.Customer; // Add the domain-specific namespace
 using GrowMate.Models;
 using GrowMate.Repositories.Interfaces;
-using GrowMate.Repositories.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GrowMate.Services.Customers
 {
@@ -33,6 +26,9 @@ namespace GrowMate.Services.Customers
 
         public async Task<bool> GetCustomerByIdAsync(int id)
             => await _unitOfWork.Customers.AnyAsync(id);
+
+        public async Task<Customer> GetCustomerDetailsByIdAsync(int id, CancellationToken ct) => await _unitOfWork.Customers.GetByUserIdAsync(id, ct)
+            ?? throw new KeyNotFoundException($"Customer with UserId {id} not found.");
 
         public async Task RemoveByUserIdAsync(int userId, CancellationToken ct)
         {
