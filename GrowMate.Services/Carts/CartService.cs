@@ -73,6 +73,63 @@ namespace GrowMate.Services.Carts
             return await _unitOfWork.Carts.GetByCustomerIdAsync(customerId);
         }
 
+        public async Task<Cart> AddTreeToCartAsync(int customerId, int listingId, int quantity)
+        {
+            // Get or create cart
+            var cart = await _unitOfWork.Carts.GetByCustomerIdAsync(customerId);
+            if (cart == null)
+            {
+                cart = new Cart
+                {
+                    CustomerId = customerId,
+                    Status = "Active",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.Carts.AddAsync(cart);
+                await _unitOfWork.SaveChangesAsync();
+            }
+
+            // Fetch listing and validate
+            var listing = await _unitOfWork.TreeListings.GetByIdAsync(listingId, includeTrees: false);
+            if (listing == null)
+            {
+                throw new InvalidOperationException("Tree listing not found");
+            }
+            if (quantity <= 0)
+            {
+                throw new InvalidOperationException("Quantity must be greater than zero");
+            }
+            if (listing.AvailableQuantity < quantity)
+            {
+                throw new InvalidOperationException("Not enough available trees in this listing");
+            }
+
+            // Find existing cart item by listing
+            var cartItem = cart.CartItems?.FirstOrDefault(ci => ci.ListingId == listingId);
+            if (cartItem != null)
+            {
+                cartItem.TreeQuantity = (cartItem.TreeQuantity ?? 0) + quantity;
+            }
+            else
+            {
+                cartItem = new CartItem
+                {
+                    CartId = cart.CartId,
+                    ListingId = listingId,
+                    TreeQuantity = quantity,
+                    TreeUnitPrice = listing.PricePerTree,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _unitOfWork.CartItems.AddAsync(cartItem);
+            }
+
+            cart.UpdatedAt = DateTime.UtcNow;
+            await _unitOfWork.SaveChangesAsync();
+
+            return await _unitOfWork.Carts.GetByCustomerIdAsync(customerId);
+        }
+
         public async Task<Cart> GetCartByCustomerIdAsync(int customerId)
         {
             return await _unitOfWork.Carts.GetByCustomerIdAsync(customerId);
@@ -107,7 +164,7 @@ namespace GrowMate.Services.Carts
             var cartItem = await _unitOfWork.CartItems.GetByIdAsync(cartItemId);
             if (cartItem == null)
             {
-                return null;
+                throw new InvalidOperationException("Cart item not found");
             }
 
             if (quantity <= 0)
@@ -119,8 +176,25 @@ namespace GrowMate.Services.Carts
             }
             else
             {
-                // Update the quantity
-                cartItem.Quantity = quantity;
+                // Update the correct quantity field based on item type
+                if (cartItem.ProductId.HasValue)
+                {
+                    cartItem.Quantity = quantity;
+                }
+                else if (cartItem.ListingId.HasValue)
+                {
+                    // Optional: validate against available quantity of listing
+                    var listing = await _unitOfWork.TreeListings.GetByIdAsync(cartItem.ListingId.Value, includeTrees: false);
+                    if (listing == null)
+                    {
+                        throw new InvalidOperationException("Tree listing not found");
+                    }
+                    if (quantity > listing.AvailableQuantity)
+                    {
+                        throw new InvalidOperationException("Requested tree quantity exceeds available quantity");
+                    }
+                    cartItem.TreeQuantity = quantity;
+                }
                 
                 // Update the cart's timestamp
                 var cart = await _unitOfWork.Carts.GetByIdAsync(cartItem.CartId);

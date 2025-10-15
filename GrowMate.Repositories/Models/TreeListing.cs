@@ -25,7 +25,11 @@ public partial class TreeListing
 
     public DateTime? UpdatedAt { get; set; }
 
+    public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
+
     public virtual Farmer Farmer { get; set; }
+
+    public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
     public virtual Post Post { get; set; }
 

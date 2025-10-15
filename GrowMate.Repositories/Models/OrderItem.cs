@@ -19,9 +19,19 @@ public partial class OrderItem
 
     public int Quantity { get; set; }
 
-    public decimal TotalPrice { get; set; }
+    public decimal? TotalPrice { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public int? ListingId { get; set; }
+
+    public int? TreeQuantity { get; set; }
+
+    public decimal? TreeUnitPrice { get; set; }
+
+    public decimal? TreeTotalPrice { get; set; }
+
+    public virtual TreeListing Listing { get; set; }
 
     public virtual Order Order { get; set; }
 

@@ -21,9 +21,13 @@ public partial class Adoption
 
     public DateTime? CreatedAt { get; set; }
 
+    public int? OrderId { get; set; }
+
     public virtual Customer Customer { get; set; }
 
     public virtual ICollection<MonthlyReport> MonthlyReports { get; set; } = new List<MonthlyReport>();
+
+    public virtual Order Order { get; set; }
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 

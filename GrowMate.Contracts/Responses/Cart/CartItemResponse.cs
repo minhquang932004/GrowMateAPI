@@ -22,6 +22,7 @@ namespace GrowMate.Contracts.Responses.Cart
         /// The identifier of the product
         /// </summary>
         public int ProductId { get; set; }
+        public int? ListingId { get; set; }
         
         /// <summary>
         /// The name of the product
@@ -62,5 +63,8 @@ namespace GrowMate.Contracts.Responses.Cart
         /// Optional product image URL
         /// </summary>
         public string ProductImageUrl { get; set; }
+
+        // Tree listing (adoption) fields reuse existing names
+        // Quantity + UnitPrice will be used for tree items via mapping in controller
     }
 }

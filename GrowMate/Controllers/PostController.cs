@@ -131,7 +131,7 @@ namespace GrowMateWebAPIs.Controllers
         }
 
         /// <summary>
-        /// Update the status of a post (APPROVE/REJECT/CANCEL).
+        /// Update the status of a post (APPROVED/PENDING/CANCELED/DRAFT).
         /// </summary>
         /// <remarks>Role: Admin only</remarks>
         [HttpPut("{id:int}/status")]

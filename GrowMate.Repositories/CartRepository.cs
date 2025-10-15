@@ -16,6 +16,9 @@ public class CartRepository : GenericRepository<Cart>, ICartRepository
         return await _context.Carts
             .Include(c => c.CartItems)
             .ThenInclude(ci => ci.Product)
+            .Include(c => c.CartItems)
+            .ThenInclude(ci => ci.Listing)
+            .ThenInclude(l => l.Post)
             .FirstOrDefaultAsync(c => c.CustomerId == customerId && c.Status == "Active");
     }
 }

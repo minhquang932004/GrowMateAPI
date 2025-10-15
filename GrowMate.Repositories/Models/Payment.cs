@@ -25,6 +25,8 @@ public partial class Payment
 
     public string SourceType { get; set; }
 
+    public DateTime? PaidAt { get; set; }
+
     public virtual Adoption Adoption { get; set; }
 
     public virtual Order Order { get; set; }

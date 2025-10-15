@@ -45,6 +45,10 @@ public partial class Order
 
     public DateTime UpdatedAt { get; set; }
 
+    public string OrderType { get; set; }
+
+    public virtual ICollection<Adoption> Adoptions { get; set; } = new List<Adoption>();
+
     public virtual Customer Customer { get; set; }
 
     public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();

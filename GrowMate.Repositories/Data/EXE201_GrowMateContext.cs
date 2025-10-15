@@ -64,7 +64,6 @@ public partial class EXE201_GrowMateContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Adoption>(entity =>
@@ -74,6 +73,8 @@ public partial class EXE201_GrowMateContext : DbContext
             entity.ToTable("adoptions");
 
             entity.HasIndex(e => e.CustomerId, "IX_adoptions_customer_id");
+
+            entity.HasIndex(e => e.OrderId, "IX_adoptions_order_id");
 
             entity.HasIndex(e => e.TreeId, "IX_adoptions_tree_id");
 
@@ -86,6 +87,7 @@ public partial class EXE201_GrowMateContext : DbContext
             entity.Property(e => e.EndDate)
                 .HasColumnType("datetime")
                 .HasColumnName("end_date");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.StartDate)
                 .HasColumnType("datetime")
                 .HasColumnName("start_date");
@@ -99,6 +101,10 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasForeignKey(d => d.CustomerId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_adoptions_customers");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.Adoptions)
+                .HasForeignKey(d => d.OrderId)
+                .HasConstraintName("FK_adoptions_orders");
 
             entity.HasOne(d => d.Tree).WithMany(p => p.Adoptions)
                 .HasForeignKey(d => d.TreeId)
@@ -169,7 +175,13 @@ public partial class EXE201_GrowMateContext : DbContext
 
             entity.ToTable("cart_items");
 
-            entity.HasIndex(e => new { e.CartId, e.ProductId }, "UQ_cart_items_cart_product").IsUnique();
+            entity.HasIndex(e => new { e.CartId, e.ListingId }, "UQ_cart_items_cart_listing")
+                .IsUnique()
+                .HasFilter("([listing_id] IS NOT NULL)");
+
+            entity.HasIndex(e => new { e.CartId, e.ProductId }, "UQ_cart_items_cart_product")
+                .IsUnique()
+                .HasFilter("([product_id] IS NOT NULL)");
 
             entity.Property(e => e.CartItemId).HasColumnName("cart_item_id");
             entity.Property(e => e.CartId).HasColumnName("cart_id");
@@ -177,10 +189,17 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+            entity.Property(e => e.ListingId).HasColumnName("listing_id");
             entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.Quantity)
                 .HasDefaultValue(1)
                 .HasColumnName("quantity");
+            entity.Property(e => e.TreeQuantity)
+                .HasDefaultValue(1)
+                .HasColumnName("tree_quantity");
+            entity.Property(e => e.TreeUnitPrice)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("tree_unit_price");
             entity.Property(e => e.UnitPrice)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("unit_price");
@@ -189,6 +208,10 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasForeignKey(d => d.CartId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_cart_items_carts");
+
+            entity.HasOne(d => d.Listing).WithMany(p => p.CartItems)
+                .HasForeignKey(d => d.ListingId)
+                .HasConstraintName("FK_cart_items_tree_listings");
 
             entity.HasOne(d => d.Product).WithMany(p => p.CartItems)
                 .HasForeignKey(d => d.ProductId)
@@ -402,6 +425,8 @@ public partial class EXE201_GrowMateContext : DbContext
 
             entity.HasIndex(e => new { e.CustomerId, e.Status }, "IX_orders_customer_status");
 
+            entity.HasIndex(e => e.OrderType, "IX_orders_order_type");
+
             entity.HasIndex(e => new { e.SellerId, e.Status }, "IX_orders_seller_status");
 
             entity.Property(e => e.OrderId).HasColumnName("order_id");
@@ -416,6 +441,10 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasColumnName("currency");
             entity.Property(e => e.CustomerId).HasColumnName("customer_id");
             entity.Property(e => e.Note).HasColumnName("note");
+            entity.Property(e => e.OrderType)
+                .HasMaxLength(20)
+                .HasDefaultValue("products")
+                .HasColumnName("order_type");
             entity.Property(e => e.PaymentStatus)
                 .IsRequired()
                 .HasMaxLength(50)
@@ -423,24 +452,19 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasColumnName("payment_status");
             entity.Property(e => e.SellerId).HasColumnName("seller_id");
             entity.Property(e => e.ShipAddress)
-                .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("ship_address");
             entity.Property(e => e.ShipCity)
-                .IsRequired()
                 .HasMaxLength(100)
                 .HasColumnName("ship_city");
             entity.Property(e => e.ShipCountry)
-                .IsRequired()
                 .HasMaxLength(100)
                 .HasDefaultValue("VN")
                 .HasColumnName("ship_country");
             entity.Property(e => e.ShipFullName)
-                .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("ship_full_name");
             entity.Property(e => e.ShipPhone)
-                .IsRequired()
                 .HasMaxLength(20)
                 .HasColumnName("ship_phone");
             entity.Property(e => e.ShipPostalCode)
@@ -492,19 +516,30 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+            entity.Property(e => e.ListingId).HasColumnName("listing_id");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
             entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.ProductName)
-                .IsRequired()
                 .HasMaxLength(255)
                 .HasColumnName("product_name");
             entity.Property(e => e.Quantity).HasColumnName("quantity");
             entity.Property(e => e.TotalPrice)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("total_price");
+            entity.Property(e => e.TreeQuantity).HasColumnName("tree_quantity");
+            entity.Property(e => e.TreeTotalPrice)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("tree_total_price");
+            entity.Property(e => e.TreeUnitPrice)
+                .HasColumnType("decimal(10, 2)")
+                .HasColumnName("tree_unit_price");
             entity.Property(e => e.UnitPrice)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("unit_price");
+
+            entity.HasOne(d => d.Listing).WithMany(p => p.OrderItems)
+                .HasForeignKey(d => d.ListingId)
+                .HasConstraintName("FK_order_items_tree_listings");
 
             entity.HasOne(d => d.Order).WithMany(p => p.OrderItems)
                 .HasForeignKey(d => d.OrderId)
@@ -541,6 +576,9 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
             entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.PaidAt)
+                .HasColumnType("datetime")
+                .HasColumnName("paid_at");
             entity.Property(e => e.PaymentMethod)
                 .IsRequired()
                 .HasMaxLength(50)

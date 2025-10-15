@@ -4,6 +4,7 @@ using GrowMate.Services.Carts;
 using GrowMate.Services.Customers; // Add this using if you have a customer service
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading;
 
 namespace GrowMate.Controllers
 {
@@ -88,6 +89,36 @@ namespace GrowMate.Controllers
         }
 
         /// <summary>
+        /// Add a tree listing (adoption) to the customer's cart.
+        /// </summary>
+        /// <remarks>Role: Authenticated Customer</remarks>
+        [HttpPost("trees")]
+        public async Task<IActionResult> AddTreeToCart([FromBody] AddTreeToCartRequest request)
+        {
+            if (request == null || request.Quantity <= 0)
+            {
+                return BadRequest(new { Message = "Invalid request payload." });
+            }
+
+            var customerId = await GetCurrentCustomerIdAsync();
+            if (customerId == null)
+            {
+                return NotFound(new { Message = "We couldn't find your customer profile. Please contact support if this is unexpected." });
+            }
+
+            try
+            {
+                var cart = await _cartService.AddTreeToCartAsync(customerId.Value, request.ListingId, request.Quantity);
+                var response = MapCartToResponse(cart);
+                return Ok(response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Update the quantity of an item in the cart.
         /// </summary>
         /// <remarks>Role: Authenticated Customer</remarks>
@@ -105,8 +136,11 @@ namespace GrowMate.Controllers
                 return NotFound(new { Message = "We couldn't find your customer profile. Please contact support if this is unexpected." });
             }
 
-            var updatedItem = await _cartService.UpdateCartItemQuantityAsync(cartItemId, request.Quantity);
-            if (updatedItem == null && request.Quantity > 0)
+            try
+            {
+                var updatedItem = await _cartService.UpdateCartItemQuantityAsync(cartItemId, request.Quantity);
+            }
+            catch (InvalidOperationException)
             {
                 return NotFound(new { Message = "Cart item not found." });
             }
@@ -162,20 +196,39 @@ namespace GrowMate.Controllers
             {
                 foreach (var item in cart.CartItems)
                 {
-                    // Get the first media item's URL or null if no media exists
-                    string imageUrl = item.Product?.Media?.FirstOrDefault()?.MediaUrl;
-
-                    response.CartItems.Add(new CartItemResponse
+                    // If this is a product item
+                    if (item.ProductId.HasValue)
                     {
-                        CartItemId = item.CartItemId,
-                        CartId = item.CartId,
-                        ProductId = item.ProductId,
-                        ProductName = item.Product?.Name ?? "Unknown Product",
-                        Quantity = item.Quantity,
-                        UnitPrice = item.UnitPrice,
-                        CreatedAt = item.CreatedAt,
-                        ProductImageUrl = imageUrl
-                    });
+                        string imageUrl = item.Product?.Media?.FirstOrDefault()?.MediaUrl;
+                        response.CartItems.Add(new CartItemResponse
+                        {
+                            CartItemId = item.CartItemId,
+                            CartId = item.CartId,
+                            ProductId = item.ProductId ?? 0,
+                            ListingId = null,
+                            ProductName = item.Product?.Name ?? "Unknown Product",
+                            Quantity = item.Quantity,
+                            UnitPrice = item.UnitPrice,
+                            CreatedAt = item.CreatedAt,
+                            ProductImageUrl = imageUrl
+                        });
+                    }
+                    else if (item.ListingId.HasValue)
+                    {
+                        // Tree listing item mapping - reuse fields
+                        response.CartItems.Add(new CartItemResponse
+                        {
+                            CartItemId = item.CartItemId,
+                            CartId = item.CartId,
+                            ProductId = 0,
+                            ListingId = item.ListingId,
+                            ProductName = item.Listing?.Post?.ProductName ?? "Tree Listing",
+                            Quantity = item.TreeQuantity ?? 0,
+                            UnitPrice = item.TreeUnitPrice ?? 0,
+                            CreatedAt = item.CreatedAt,
+                            ProductImageUrl = null
+                        });
+                    }
                 }
             }
             return response;

@@ -11,7 +11,7 @@ public partial class CartItem
 
     public int CartId { get; set; }
 
-    public int ProductId { get; set; }
+    public int? ProductId { get; set; }
 
     public int Quantity { get; set; }
 
@@ -19,7 +19,15 @@ public partial class CartItem
 
     public DateTime CreatedAt { get; set; }
 
+    public int? ListingId { get; set; }
+
+    public int? TreeQuantity { get; set; }
+
+    public decimal? TreeUnitPrice { get; set; }
+
     public virtual Cart Cart { get; set; }
+
+    public virtual TreeListing Listing { get; set; }
 
     public virtual Product Product { get; set; }
 }

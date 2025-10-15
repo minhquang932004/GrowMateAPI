@@ -32,10 +32,17 @@ namespace GrowMate.Services.Orders
                 // Step 2: Calculate order amounts
                 decimal subtotal = 0;
                 
-                // Calculate subtotal from cart items
+                // Calculate subtotal from cart items (products + trees)
                 foreach (var item in cart.CartItems)
                 {
-                    subtotal += item.Quantity * item.UnitPrice;
+                    if (item.ProductId.HasValue)
+                    {
+                        subtotal += item.Quantity * item.UnitPrice;
+                    }
+                    else if (item.ListingId.HasValue)
+                    {
+                        subtotal += (item.TreeQuantity ?? 0) * (item.TreeUnitPrice ?? 0);
+                    }
                 }
                 
                 // Calculate shipping fee (can be based on distance, weight, etc.)
@@ -45,11 +52,29 @@ namespace GrowMate.Services.Orders
                 // Calculate total amount (subtotal + shipping fee)
                 decimal totalAmount = subtotal + shippingFee;
                 
-                // Check if the first cart item and its product are not null
+                // Determine seller and order type
                 var firstCartItem = cart.CartItems.FirstOrDefault();
-                if (firstCartItem?.Product == null)
+                int sellerId;
+                string orderType;
+                if (firstCartItem?.ProductId != null && firstCartItem?.Product != null)
                 {
-                    throw new InvalidOperationException("Cart items have invalid products.");
+                    sellerId = firstCartItem.Product.FarmerId;
+                    orderType = cart.CartItems.Any(ci => ci.ListingId.HasValue) ? "mixed" : "products";
+                }
+                else if (firstCartItem?.ListingId != null)
+                {
+                    // Load listing to get farmer
+                    var listing = await _unitOfWork.TreeListings.GetByIdAsync(firstCartItem.ListingId.Value, includeTrees: false, ct);
+                    if (listing == null)
+                    {
+                        throw new InvalidOperationException("Invalid tree listing in cart.");
+                    }
+                    sellerId = listing.FarmerId;
+                    orderType = cart.CartItems.Any(ci => ci.ProductId != 0) ? "mixed" : "adoption";
+                }
+                else
+                {
+                    throw new InvalidOperationException("Cart items are invalid.");
                 }
                 
                 // Step 3: Create a new order
@@ -57,14 +82,16 @@ namespace GrowMate.Services.Orders
                 {
                     CustomerId = cart.CustomerId,
                     // Get the first seller ID from cart items
-                    SellerId = firstCartItem.Product.FarmerId,
+                    SellerId = sellerId,
+                    OrderType = orderType,
                     Status = OrderStatuses.Pending, // Initial order status
                     PaymentStatus = PaymentStatuses.Pending, // Initial payment status
                     Currency = "VND", // Vietnamese Dong
                     Subtotal = CurrencyUtils.RoundToNearestThousand(subtotal), // Round to nearest 1000 VND
                     ShippingFee = shippingFee,
                     TotalAmount = CurrencyUtils.RoundToNearestThousand(totalAmount), // Round to nearest 1000 VND
-                    ShipAddress = shippingAddress, // Use the core property directly
+                    // Shipping information - now optional
+                    ShipAddress = shippingAddress, // Use provided address or null
                     Note = notes, // Use the core property directly
                     OrderItems = new List<OrderItem>(),
                     CreatedAt = DateTime.UtcNow,
@@ -74,33 +101,47 @@ namespace GrowMate.Services.Orders
                 // Step 4: Create order items from cart items
                 foreach (var cartItem in cart.CartItems)
                 {
-                    var product = await _unitOfWork.Products.GetByIdAsync(cartItem.ProductId);
-                    
-                    if (product == null)
+                    if (cartItem.ProductId.HasValue)
                     {
-                        throw new InvalidOperationException($"Product with ID {cartItem.ProductId} not found.");
+                        var product = await _unitOfWork.Products.GetByIdAsync(cartItem.ProductId.Value);
+                        if (product == null)
+                        {
+                            throw new InvalidOperationException($"Product with ID {cartItem.ProductId} not found.");
+                        }
+                        if (product.Stock < cartItem.Quantity)
+                        {
+                            throw new InvalidOperationException($"Not enough stock for product: {product.Name}. Available: {product.Stock}, Requested: {cartItem.Quantity}");
+                        }
+                        var orderItem = new OrderItem
+                        {
+                            ProductId = cartItem.ProductId.Value,
+                            ProductName = product.Name,
+                            Quantity = cartItem.Quantity,
+                            UnitPrice = cartItem.UnitPrice,
+                            TotalPrice = cartItem.UnitPrice * cartItem.Quantity,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        product.Stock -= cartItem.Quantity;
+                        _unitOfWork.Products.Update(product);
+                        order.OrderItems.Add(orderItem);
                     }
-                    
-                    if (product.Stock < cartItem.Quantity)
+                    else if (cartItem.ListingId.HasValue)
                     {
-                        throw new InvalidOperationException($"Not enough stock for product: {product.Name}. Available: {product.Stock}, Requested: {cartItem.Quantity}");
+                        var listing = await _unitOfWork.TreeListings.GetByIdAsync(cartItem.ListingId.Value, includeTrees: false, ct);
+                        if (listing == null)
+                        {
+                            throw new InvalidOperationException($"Tree listing with ID {cartItem.ListingId} not found.");
+                        }
+                        var orderItem = new OrderItem
+                        {
+                            ListingId = cartItem.ListingId,
+                            TreeQuantity = cartItem.TreeQuantity,
+                            TreeUnitPrice = cartItem.TreeUnitPrice,
+                            TreeTotalPrice = (cartItem.TreeQuantity ?? 0) * (cartItem.TreeUnitPrice ?? 0),
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        order.OrderItems.Add(orderItem);
                     }
-
-                    // Create order item
-                    var orderItem = new OrderItem
-                    {
-                        ProductId = cartItem.ProductId,
-                        Quantity = cartItem.Quantity,
-                        UnitPrice = cartItem.UnitPrice,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    
-                    // Decrease product stock
-                    product.Stock -= cartItem.Quantity;
-                    _unitOfWork.Products.Update(product);
-                    
-                    // Add order item to order
-                    order.OrderItems.Add(orderItem);
                 }
 
                 // Step 5: Save the order
