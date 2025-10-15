@@ -37,9 +37,9 @@ namespace GrowMate.Services.Authentication
             if (latest is not null)
             {
                 var nextAllowedAt = latest.CreatedAt.AddMinutes(1);
-                if (DateTime.UtcNow < nextAllowedAt)
+                if (DateTime.Now < nextAllowedAt)
                 {
-                    var remaining = (int)Math.Ceiling((nextAllowedAt - DateTime.UtcNow).TotalSeconds);
+                    var remaining = (int)Math.Ceiling((nextAllowedAt - DateTime.Now).TotalSeconds);
                     return new AuthResponse
                     {
                         Success = false,
@@ -56,8 +56,8 @@ namespace GrowMate.Services.Authentication
             {
                 UserId = user.UserId,
                 CodeHash = BCrypt.Net.BCrypt.HashPassword(code),
-                ExpiresAt = DateTime.UtcNow.AddMinutes(10),
-                CreatedAt = DateTime.UtcNow
+                ExpiresAt = DateTime.Now.AddMinutes(10),
+                CreatedAt = DateTime.Now
             };
 
             await _unitOfWork.EmailVerifications.AddAsync(verification, ct);
@@ -97,7 +97,7 @@ namespace GrowMate.Services.Authentication
                 return new AuthResponse { Success = false, Message = "Email is not verified." };
 
             var latest = await _unitOfWork.EmailVerifications.GetLatestUnverifiedAsync(user.UserId, ct);
-            if (latest is null || latest.ExpiresAt < DateTime.UtcNow)
+            if (latest is null || latest.ExpiresAt < DateTime.Now)
                 return new AuthResponse { Success = false, Message = "Reset code is invalid or expired." };
 
             var ok = BCrypt.Net.BCrypt.Verify(request.Code, latest.CodeHash);
@@ -105,11 +105,11 @@ namespace GrowMate.Services.Authentication
                 return new AuthResponse { Success = false, Message = "Reset code is incorrect." };
 
             // Consume the code and update password
-            latest.VerifiedAt = DateTime.UtcNow;
-            latest.ExpiresAt = DateTime.UtcNow;
+            latest.VerifiedAt = DateTime.Now;
+            latest.ExpiresAt = DateTime.Now;
 
             user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            user.UpdatedAt = DateTime.UtcNow;
+            user.UpdatedAt = DateTime.Now;
 
             _unitOfWork.Users.Update(user);
             await _unitOfWork.SaveChangesAsync(ct);

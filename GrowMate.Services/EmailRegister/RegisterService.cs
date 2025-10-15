@@ -62,8 +62,8 @@ namespace GrowMate.Services.EmailRegister
             {
                 UserId = user.UserId,
                 CodeHash = BCrypt.Net.BCrypt.HashPassword(code),
-                ExpiresAt = DateTime.UtcNow.AddMinutes(10),
-                CreatedAt = DateTime.UtcNow
+                ExpiresAt = DateTime.Now.AddMinutes(10),
+                CreatedAt = DateTime.Now
             };
 
             await _unitOfWork.EmailVerifications.AddAsync(verification, ct);
@@ -106,7 +106,7 @@ namespace GrowMate.Services.EmailRegister
                 return new AuthResponse { Success = false, Message = "Verification code is incorrect." };
             }
 
-            latest.VerifiedAt = DateTime.UtcNow;
+            latest.VerifiedAt = DateTime.Now;
             user.IsActive = true;
             user.Role = UserRoles.Customer;
 
@@ -119,7 +119,7 @@ namespace GrowMate.Services.EmailRegister
                 await _unitOfWork.Customers.CreateAsync(new Customer
                 {
                     UserId = user.UserId,          // FIX: do not set CustomerId (identity)
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 }, ct);
             }
 
@@ -151,9 +151,9 @@ namespace GrowMate.Services.EmailRegister
             if (latest is not null)
             {
                 var nextAllowedAt = latest.CreatedAt.AddMinutes(1);
-                if (DateTime.UtcNow < nextAllowedAt)
+                if (DateTime.Now < nextAllowedAt)
                 {
-                    var remaining = (int)Math.Ceiling((nextAllowedAt - DateTime.UtcNow).TotalSeconds);
+                    var remaining = (int)Math.Ceiling((nextAllowedAt - DateTime.Now).TotalSeconds);
                     return new AuthResponse
                     {
                         Success = false,
@@ -171,8 +171,8 @@ namespace GrowMate.Services.EmailRegister
             {
                 UserId = user.UserId,
                 CodeHash = BCrypt.Net.BCrypt.HashPassword(code),
-                ExpiresAt = DateTime.UtcNow.AddMinutes(10),
-                CreatedAt = DateTime.UtcNow
+                ExpiresAt = DateTime.Now.AddMinutes(10),
+                CreatedAt = DateTime.Now
             };
 
             await _unitOfWork.EmailVerifications.AddAsync(verification, ct);

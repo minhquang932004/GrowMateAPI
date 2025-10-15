@@ -27,8 +27,8 @@ namespace GrowMate.Services.Carts
                 {
                     CustomerId = customerId,
                     Status = "Active",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
                 };
                 
                 await _unitOfWork.Carts.AddAsync(cart);
@@ -59,13 +59,13 @@ namespace GrowMate.Services.Carts
                     ProductId = productId,
                     Quantity = quantity,
                     UnitPrice = product.Price,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 };
                 await _unitOfWork.CartItems.AddAsync(cartItem);
             }
             
             // Update the cart's timestamp
-            cart.UpdatedAt = DateTime.UtcNow;
+            cart.UpdatedAt = DateTime.Now;
             
             await _unitOfWork.SaveChangesAsync();
 
@@ -83,8 +83,8 @@ namespace GrowMate.Services.Carts
                 {
                     CustomerId = customerId,
                     Status = "Active",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
                 };
                 await _unitOfWork.Carts.AddAsync(cart);
                 await _unitOfWork.SaveChangesAsync();
@@ -119,12 +119,12 @@ namespace GrowMate.Services.Carts
                     ListingId = listingId,
                     TreeQuantity = quantity,
                     TreeUnitPrice = listing.PricePerTree,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 };
                 await _unitOfWork.CartItems.AddAsync(cartItem);
             }
 
-            cart.UpdatedAt = DateTime.UtcNow;
+            cart.UpdatedAt = DateTime.Now;
             await _unitOfWork.SaveChangesAsync();
 
             return await _unitOfWork.Carts.GetByCustomerIdAsync(customerId);
@@ -151,7 +151,7 @@ namespace GrowMate.Services.Carts
             var cart = await _unitOfWork.Carts.GetByIdAsync(cartItem.CartId);
             if (cart != null)
             {
-                cart.UpdatedAt = DateTime.UtcNow;
+                cart.UpdatedAt = DateTime.Now;
             }
 
             await _unitOfWork.SaveChangesAsync();
@@ -200,7 +200,7 @@ namespace GrowMate.Services.Carts
                 var cart = await _unitOfWork.Carts.GetByIdAsync(cartItem.CartId);
                 if (cart != null)
                 {
-                    cart.UpdatedAt = DateTime.UtcNow;
+                    cart.UpdatedAt = DateTime.Now;
                 }
                 
                 await _unitOfWork.SaveChangesAsync();

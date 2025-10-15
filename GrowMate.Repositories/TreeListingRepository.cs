@@ -39,7 +39,7 @@ namespace GrowMate.Repositories
 
         public async Task<TreeListing?> GetByIdAsync(int id, bool includeTrees, CancellationToken ct = default)
         {
-            IQueryable<TreeListing> item = _dbContext.TreeListings;
+            IQueryable<TreeListing> item = _dbContext.TreeListings.Include(a => a.Post);
             if (includeTrees)
             {
                 item = item.Include(a => a.Trees);
@@ -49,7 +49,7 @@ namespace GrowMate.Repositories
 
         public async Task<TreeListing?> GetByPostIdAsync(int postId, bool includeTrees, CancellationToken ct = default)
         {
-            IQueryable<TreeListing> item = _dbContext.TreeListings;
+            IQueryable<TreeListing> item = _dbContext.TreeListings.Include(a => a.Post);
             if (includeTrees)
             {
                 item = item.Include(a => a.Trees);

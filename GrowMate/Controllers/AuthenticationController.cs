@@ -137,7 +137,7 @@ namespace GrowMateWebAPIs.Controllers
                     HttpOnly = true,
                     Secure = true,
                     SameSite = SameSiteMode.None,
-                    Expires = DateTimeOffset.UtcNow.AddDays(3)
+                    Expires = DateTimeOffset.Now.AddDays(3)
                 });
                 return Redirect(redirectUrl);
             }

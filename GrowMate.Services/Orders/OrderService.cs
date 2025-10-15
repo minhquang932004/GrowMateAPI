@@ -94,8 +94,8 @@ namespace GrowMate.Services.Orders
                     ShipAddress = shippingAddress, // Use provided address or null
                     Note = notes, // Use the core property directly
                     OrderItems = new List<OrderItem>(),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
                 };
 
                 // Step 4: Create order items from cart items
@@ -119,7 +119,7 @@ namespace GrowMate.Services.Orders
                             Quantity = cartItem.Quantity,
                             UnitPrice = cartItem.UnitPrice,
                             TotalPrice = cartItem.UnitPrice * cartItem.Quantity,
-                            CreatedAt = DateTime.UtcNow
+                            CreatedAt = DateTime.Now
                         };
                         product.Stock -= cartItem.Quantity;
                         _unitOfWork.Products.Update(product);
@@ -132,13 +132,26 @@ namespace GrowMate.Services.Orders
                         {
                             throw new InvalidOperationException($"Tree listing with ID {cartItem.ListingId} not found.");
                         }
+                        
+                        // Get product name from the associated post
+                        var post = listing.Post;
+                        if (post == null)
+                        {
+                            throw new InvalidOperationException($"Post not found for tree listing with ID {cartItem.ListingId}.");
+                        }
+                        
                         var orderItem = new OrderItem
                         {
+                            ProductId = null, // Null for tree items (will be made nullable in DB)
+                            ProductName = null, // Null for tree items (will be made nullable in DB)
+                            UnitPrice = 0, // Required field - not used for trees
+                            Quantity = 0, // Required field - not used for trees
+                            TotalPrice = null, // Null for tree items (will be made nullable in DB)
                             ListingId = cartItem.ListingId,
                             TreeQuantity = cartItem.TreeQuantity,
                             TreeUnitPrice = cartItem.TreeUnitPrice,
                             TreeTotalPrice = (cartItem.TreeQuantity ?? 0) * (cartItem.TreeUnitPrice ?? 0),
-                            CreatedAt = DateTime.UtcNow
+                            CreatedAt = DateTime.Now
                         };
                         order.OrderItems.Add(orderItem);
                     }
@@ -150,7 +163,7 @@ namespace GrowMate.Services.Orders
                 // Step 6: Clear the cart
                 _unitOfWork.CartItems.RemoveRange(cart.CartItems);
                 cart.Status = "Ordered"; // Change cart status
-                cart.UpdatedAt = DateTime.UtcNow;
+                cart.UpdatedAt = DateTime.Now;
                 
                 await _unitOfWork.SaveChangesAsync(ct);
                 
@@ -195,7 +208,7 @@ namespace GrowMate.Services.Orders
             }
             
             order.Status = normalizedStatus; // Store the uppercase version
-            order.UpdatedAt = DateTime.UtcNow;
+            order.UpdatedAt = DateTime.Now;
             
             await _unitOfWork.SaveChangesAsync();
             return true;
@@ -223,7 +236,7 @@ namespace GrowMate.Services.Orders
             
             // Fix: Use normalizedPaymentStatus instead of paymentStatus
             order.PaymentStatus = normalizedPaymentStatus;
-            order.UpdatedAt = DateTime.UtcNow;
+            order.UpdatedAt = DateTime.Now;
             
             await _unitOfWork.SaveChangesAsync();
             return true;

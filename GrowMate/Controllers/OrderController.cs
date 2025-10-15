@@ -232,16 +232,62 @@ namespace GrowMate.Controllers
             {
                 foreach (var item in order.OrderItems)
                 {
-                    response.OrderItems.Add(new OrderItemResponse
+                    OrderItemResponse orderItemResponse;
+                    
+                    if (item.ProductId.HasValue)
                     {
-                        OrderItemId = item.OrderItemId,
-                        OrderId = item.OrderId,
-                        ProductId = item.ProductId,
-                        ProductName = item.Product?.Name ?? "Unknown Product",
-                        Quantity = item.Quantity,
-                        UnitPrice = item.UnitPrice,
-                        CreatedAt = item.CreatedAt,
-                    });
+                        // Product item
+                        orderItemResponse = new ProductOrderItemResponse
+                        {
+                            OrderItemId = item.OrderItemId,
+                            OrderId = item.OrderId,
+                            ProductId = item.ProductId.Value,
+                            ProductName = item.ProductName ?? item.Product?.Name ?? "Unknown Product",
+                            Quantity = item.Quantity,
+                            UnitPrice = item.UnitPrice,
+                            TotalPriceFromDb = item.TotalPrice,
+                            CreatedAt = item.CreatedAt,
+                            ProductImageUrl = item.Product?.Media?.FirstOrDefault()?.MediaUrl ?? ""
+                        };
+                    }
+                    else if (item.ListingId.HasValue)
+                    {
+                        // Tree listing item
+                        var post = item.Listing?.Post;
+                        orderItemResponse = new TreeOrderItemResponse
+                        {
+                            OrderItemId = item.OrderItemId,
+                            OrderId = item.OrderId,
+                            ListingId = item.ListingId.Value,
+                            ProductName = item.Listing?.Post?.ProductName ?? "Unknown Tree",
+                            ProductType = post?.ProductType ?? "",
+                            ProductVariety = post?.ProductVariety ?? "",
+                            FarmName = post?.FarmName ?? "",
+                            TreeQuantity = item.TreeQuantity ?? 0,
+                            TreeUnitPrice = item.TreeUnitPrice ?? 0,
+                            TreeTotalPriceFromDb = item.TreeTotalPrice,
+                            CreatedAt = item.CreatedAt,
+                            ProductImageUrl = "" // TODO: Get from media if needed
+                        };
+                    }
+                    else
+                    {
+                        // Fallback - shouldn't happen
+                        orderItemResponse = new ProductOrderItemResponse
+                        {
+                            OrderItemId = item.OrderItemId,
+                            OrderId = item.OrderId,
+                            ProductId = 0,
+                            ProductName = "Unknown Item",
+                            Quantity = item.Quantity,
+                            UnitPrice = item.UnitPrice,
+                            TotalPriceFromDb = item.TotalPrice,
+                            CreatedAt = item.CreatedAt,
+                            ProductImageUrl = ""
+                        };
+                    }
+                    
+                    response.OrderItems.Add(orderItemResponse);
                 }
             }
 

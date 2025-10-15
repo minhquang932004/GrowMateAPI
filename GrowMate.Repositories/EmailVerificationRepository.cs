@@ -29,7 +29,7 @@ namespace GrowMate.Repositories
 
         public Task<EmailVerification?> GetLatestUnverifiedAsync(int userId, CancellationToken ct = default)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             return _dbContext.EmailVerifications
                 .Where(v => v.UserId == userId && v.VerifiedAt == null && v.ExpiresAt > now)
                 .OrderByDescending(v => v.CreatedAt)

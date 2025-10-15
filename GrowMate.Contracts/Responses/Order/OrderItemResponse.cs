@@ -1,12 +1,15 @@
-using GrowMate.Contracts.Utils;
 using System;
+using System.Text.Json.Serialization;
 
 namespace GrowMate.Contracts.Responses.Order
 {
     /// <summary>
-    /// Response model representing an item in an order
+    /// Base response model representing an item in an order
+    /// This is used as a union type to handle both ProductOrderItemResponse and TreeOrderItemResponse
     /// </summary>
-    public class OrderItemResponse
+    [JsonDerivedType(typeof(ProductOrderItemResponse), typeDiscriminator: "Product")]
+    [JsonDerivedType(typeof(TreeOrderItemResponse), typeDiscriminator: "Tree")]
+    public abstract class OrderItemResponse
     {
         /// <summary>
         /// The unique identifier for the order item
@@ -19,39 +22,9 @@ namespace GrowMate.Contracts.Responses.Order
         public int OrderId { get; set; }
         
         /// <summary>
-        /// The identifier of the product
-        /// </summary>
-        public int ProductId { get; set; }
-        
-        /// <summary>
-        /// The name of the product
+        /// The name of the product/tree
         /// </summary>
         public string ProductName { get; set; }
-        
-        /// <summary>
-        /// The quantity of the product ordered
-        /// </summary>
-        public int Quantity { get; set; }
-        
-        /// <summary>
-        /// The unit price of the product at the time of ordering (in VND)
-        /// </summary>
-        public decimal UnitPrice { get; set; }
-        
-        /// <summary>
-        /// The unit price formatted as a VND currency string
-        /// </summary>
-        public string UnitPriceFormatted => CurrencyUtils.FormatVND(UnitPrice);
-        
-        /// <summary>
-        /// The total price for this order item (quantity * unit price) in VND
-        /// </summary>
-        public decimal TotalPrice => Quantity * UnitPrice;
-        
-        /// <summary>
-        /// The total price formatted as a VND currency string
-        /// </summary>
-        public string TotalPriceFormatted => CurrencyUtils.FormatVND(TotalPrice);
         
         /// <summary>
         /// The date and time when the item was added to the order
@@ -59,8 +32,13 @@ namespace GrowMate.Contracts.Responses.Order
         public DateTime CreatedAt { get; set; }
         
         /// <summary>
-        /// Optional product image URL
+        /// Optional product/tree image URL
         /// </summary>
         public string ProductImageUrl { get; set; }
+        
+        /// <summary>
+        /// The type of order item (Product or Tree)
+        /// </summary>
+        public abstract string ItemType { get; }
     }
 }
