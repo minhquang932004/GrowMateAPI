@@ -1,12 +1,11 @@
 using System;
-using System.Collections.Generic;
 
 namespace GrowMate.Contracts.Responses.Post
 {
     /// <summary>
-    /// Response model representing a post created by a farmer
+    /// Response model representing a post in a list view (optimized for performance)
     /// </summary>
-    public class PostResponse
+    public class PostListItemResponse
     {
         /// <summary>
         /// The unique identifier for the post
@@ -89,18 +88,8 @@ namespace GrowMate.Contracts.Responses.Post
         public DateTime? UpdatedAt { get; set; }
 
         /// <summary>
-        /// List of media items (images/videos) associated with this post
+        /// URL to the primary image of the post (optimized - only primary image URL)
         /// </summary>
-        public List<MediaPostResponse>? MediaPostList { get; set; }
-        
-        /// <summary>
-        /// List of comments on this post
-        /// </summary>
-        public List<PostCommentResponse>? PostCommentList { get; set; }
-        
-        /// <summary>
-        /// URL to the primary/main image of the post
-        /// </summary>
-        public string MainImageUrl { get; set; }
+        public string PrimaryImageUrl { get; set; }
     }
 }

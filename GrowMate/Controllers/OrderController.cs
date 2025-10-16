@@ -247,7 +247,7 @@ namespace GrowMate.Controllers
                             UnitPrice = item.UnitPrice,
                             TotalPriceFromDb = item.TotalPrice,
                             CreatedAt = item.CreatedAt,
-                            ProductImageUrl = item.Product?.Media?.FirstOrDefault()?.MediaUrl ?? ""
+                            ProductImageUrl = item.Product?.Media?.FirstOrDefault(m => m.IsPrimary)?.MediaUrl ?? item.Product?.Media?.FirstOrDefault()?.MediaUrl ?? ""
                         };
                     }
                     else if (item.ListingId.HasValue)
@@ -267,7 +267,7 @@ namespace GrowMate.Controllers
                             TreeUnitPrice = item.TreeUnitPrice ?? 0,
                             TreeTotalPriceFromDb = item.TreeTotalPrice,
                             CreatedAt = item.CreatedAt,
-                            ProductImageUrl = "" // TODO: Get from media if needed
+                            ProductImageUrl = post?.Media?.FirstOrDefault(m => m.IsPrimary)?.MediaUrl ?? post?.Media?.FirstOrDefault()?.MediaUrl ?? ""
                         };
                     }
                     else

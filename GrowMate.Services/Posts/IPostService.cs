@@ -11,9 +11,9 @@ namespace GrowMate.Services.Posts
 {
     public interface IPostService
     {
-        Task<PageResult<Post>> GetAllPostsAsync(int page, int pageSize, CancellationToken ct = default);
+        Task<PageResult<PostListItemResponse>> GetAllPostsAsync(int page, int pageSize, CancellationToken ct = default);
         Task<PostResponse?> GetPostByIdAsync(int id, CancellationToken ct = default);
-        Task<PageResult<Post>> GetAllPostsByFarmerIdAsync(int id, int page, int pageSize, CancellationToken ct = default);
+        Task<PageResult<PostListItemResponse>> GetAllPostsByFarmerIdAsync(int id, int page, int pageSize, CancellationToken ct = default);
         Task<AuthResponse> CreatePostAsync(CreatePostRequest request, CancellationToken ct = default);
         Task<AuthResponse> DeletePostAsync(int id, CancellationToken ct = default);
         Task<AuthResponse> UpdatePostStatusAsync(int id, string status, CancellationToken ct = default);

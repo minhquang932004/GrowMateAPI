@@ -326,6 +326,9 @@ public partial class EXE201_GrowMateContext : DbContext
             entity.Property(e => e.PostId).HasColumnName("post_id");
             entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.ReportId).HasColumnName("report_id");
+            entity.Property(e => e.IsPrimary)
+                .HasDefaultValue(false)
+                .HasColumnName("is_primary");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")

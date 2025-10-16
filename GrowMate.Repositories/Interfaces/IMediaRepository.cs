@@ -17,5 +17,7 @@ namespace GrowMate.Repositories.Interfaces
         Task RemoveAsync(Medium media, CancellationToken ct = default);
         void AddRange(IEnumerable<Medium> media);
         void RemoveRange(IEnumerable<Medium> media);
+        Task<Medium?> GetPrimaryImageByPostIdAsync(int postId, CancellationToken ct = default);
+        Task<Medium?> GetPrimaryImageByProductIdAsync(int productId, CancellationToken ct = default);
     }
 }

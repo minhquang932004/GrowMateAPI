@@ -35,10 +35,22 @@ namespace GrowMate.Services.Media
                 throw new ArgumentException("Exactly one of postId, productId, or reportId must be set.");
 
             var mediaList = new List<Medium>();
-            foreach (var mediaItem in mediaItems)
+            bool primarySet = false;
+            
+            for (int i = 0; i < mediaItems.Count; i++)
             {
+                var mediaItem = mediaItems[i];
+                
                 if (!Enum.TryParse<MediaType>(mediaItem.MediaType, out var mediaTypeEnum))
                     throw new ArgumentException($"Invalid media type: {mediaItem.MediaType}");
+
+                // Set primary to first Image found, skip if it's Video and no Image primary yet
+                bool isPrimary = false;
+                if (!primarySet && mediaTypeEnum.ToString().ToLower() == "image")
+                {
+                    isPrimary = true;
+                    primarySet = true;
+                }
 
                 var medium = new Medium
                 {
@@ -47,10 +59,17 @@ namespace GrowMate.Services.Media
                     ReportId = reportId,
                     MediaUrl = mediaItem.MediaUrl,
                     MediaType = mediaTypeEnum.ToString(),
+                    IsPrimary = isPrimary,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 };
                 mediaList.Add(medium);
+            }
+            
+            // If no Image found, set the first item as primary (fallback)
+            if (!primarySet && mediaList.Any())
+            {
+                mediaList[0].IsPrimary = true;
             }
             _unitOfWork.Media.AddRange(mediaList);
             await _unitOfWork.SaveChangesAsync(ct);

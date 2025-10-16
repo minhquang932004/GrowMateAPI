@@ -63,5 +63,19 @@ namespace GrowMate.Repositories
             if (media == null) return;
             _dbContext.Media.RemoveRange(media);
         }
+
+        public async Task<Medium?> GetPrimaryImageByPostIdAsync(int postId, CancellationToken ct = default)
+        {
+            return await _dbContext.Media
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.PostId == postId && m.IsPrimary, ct);
+        }
+
+        public async Task<Medium?> GetPrimaryImageByProductIdAsync(int productId, CancellationToken ct = default)
+        {
+            return await _dbContext.Media
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.ProductId == productId && m.IsPrimary, ct);
+        }
     }
 }

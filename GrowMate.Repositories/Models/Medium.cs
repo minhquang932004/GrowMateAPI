@@ -23,6 +23,8 @@ public partial class Medium
 
     public int? ProductId { get; set; }
 
+    public bool IsPrimary { get; set; } = false;
+
     public virtual Post Post { get; set; }
 
     public virtual Product Product { get; set; }

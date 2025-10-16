@@ -32,11 +32,87 @@ namespace GrowMate.Services.Posts
             _treeListingService = treeListingService;
         }
 
-        public Task<PageResult<Post>> GetAllPostsAsync(int page, int pageSize, CancellationToken ct = default)
-            => _unitOfWork.Posts.GetAllAsync(page, pageSize, ct);
+        public async Task<PageResult<PostListItemResponse>> GetAllPostsAsync(int page, int pageSize, CancellationToken ct = default)
+        {
+            var result = await _unitOfWork.Posts.GetAllAsync(page, pageSize, ct);
+            
+            var items = new List<PostListItemResponse>();
+            foreach (var post in result.Items)
+            {
+                var primaryMedia = await _unitOfWork.Media.GetPrimaryImageByPostIdAsync(post.PostId, ct);
+                
+                items.Add(new PostListItemResponse
+                {
+                    PostId = post.PostId,
+                    FarmerId = post.FarmerId,
+                    ProductName = post.ProductName,
+                    ProductType = post.ProductType,
+                    ProductVariety = post.ProductVariety,
+                    FarmName = post.FarmName,
+                    Origin = post.Origin,
+                    PricePerYear = post.PricePerYear,
+                    HarvestWeight = post.HarvestWeight,
+                    Unit = post.Unit,
+                    HarvestFrequency = post.HarvestFrequency,
+                    TreeQuantity = post.TreeQuantity,
+                    Description = post.Description,
+                    Status = post.Status,
+                    CreatedAt = post.CreatedAt,
+                    UpdatedAt = post.UpdatedAt,
+                    PrimaryImageUrl = primaryMedia?.MediaUrl ?? ""
+                });
+            }
+            
+            return new PageResult<PostListItemResponse>
+            {
+                Items = items,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize,
+                TotalItems = result.TotalItems,
+                TotalPages = result.TotalPages
+            };
+        }
 
-        public Task<PageResult<Post>> GetAllPostsByFarmerIdAsync(int id, int page, int pageSize, CancellationToken ct = default)
-            => _unitOfWork.Posts.GetByFarmerIdAsync(id, page, pageSize, ct);
+        public async Task<PageResult<PostListItemResponse>> GetAllPostsByFarmerIdAsync(int id, int page, int pageSize, CancellationToken ct = default)
+        {
+            var result = await _unitOfWork.Posts.GetByFarmerIdAsync(id, page, pageSize, ct);
+            
+            var items = new List<PostListItemResponse>();
+            foreach (var post in result.Items)
+            {
+                var primaryMedia = await _unitOfWork.Media.GetPrimaryImageByPostIdAsync(post.PostId, ct);
+                
+                items.Add(new PostListItemResponse
+                {
+                    PostId = post.PostId,
+                    FarmerId = post.FarmerId,
+                    ProductName = post.ProductName,
+                    ProductType = post.ProductType,
+                    ProductVariety = post.ProductVariety,
+                    FarmName = post.FarmName,
+                    Origin = post.Origin,
+                    PricePerYear = post.PricePerYear,
+                    HarvestWeight = post.HarvestWeight,
+                    Unit = post.Unit,
+                    HarvestFrequency = post.HarvestFrequency,
+                    TreeQuantity = post.TreeQuantity,
+                    Description = post.Description,
+                    Status = post.Status,
+                    CreatedAt = post.CreatedAt,
+                    UpdatedAt = post.UpdatedAt,
+                    PrimaryImageUrl = primaryMedia?.MediaUrl ?? ""
+                });
+            }
+            
+            return new PageResult<PostListItemResponse>
+            {
+                Items = items,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize,
+                TotalItems = result.TotalItems,
+                TotalPages = result.TotalPages
+            };
+        }
 
         public async Task<PostResponse?> GetPostByIdAsync(int id, CancellationToken ct = default)
         {
@@ -78,7 +154,8 @@ namespace GrowMate.Services.Posts
                     CommentContent = c.CommentContent,
                     CreatedAt = c.CreatedAt,
                     UpdatedAt = c.UpdatedAt
-                }).ToList() ?? new List<PostCommentResponse>()
+                }).ToList() ?? new List<PostCommentResponse>(),
+                MainImageUrl = post.Media?.FirstOrDefault(m => m.IsPrimary)?.MediaUrl ?? post.Media?.FirstOrDefault()?.MediaUrl
             };
         }
 

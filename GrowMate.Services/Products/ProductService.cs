@@ -31,9 +31,15 @@ namespace GrowMate.Services.Products
         {
             var product = new Product
             {
+                FarmerId = request.FarmerId,
+                CategoryId = request.CategoryId,
+                ProductTypeId = request.ProductTypeId,
+                UnitId = request.UnitId,
                 Name = request.Name,
+                Slug = request.Slug,
                 Description = request.Description,
-                // ... other fields
+                Price = request.Price,
+                Stock = request.Stock,
                 Status = ProductStatuses.Pending,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
@@ -44,27 +50,10 @@ namespace GrowMate.Services.Products
                 await _uow.Products.AddAsync(product, token);
                 await _uow.SaveChangesAsync(token);
 
-                if (request.Media != null)
+                // Use MediaService for consistent primary image logic
+                if (request.Media != null && request.Media.Count > 0)
                 {
-                    foreach (var mediaItem in request.Media)
-                    {
-                        // Validate media type
-                        if (!Enum.TryParse<MediaType>(mediaItem.MediaType, out var mediaTypeEnum))
-                        {
-                            throw new ArgumentException($"Invalid media type: {mediaItem.MediaType}");
-                        }
-
-                        var medium = new Medium
-                        {
-                            ProductId = product.ProductId,
-                            MediaUrl = mediaItem.MediaUrl,
-                            MediaType = mediaTypeEnum.ToString(), // Store as string for compatibility
-                            CreatedAt = DateTime.Now,
-                            UpdatedAt = DateTime.Now
-                        };
-                        await _uow.Media.AddAsync(medium, token);
-                    }
-                    await _uow.SaveChangesAsync(token);
+                    await _mediaService.CreateMediaAsync(request.Media, productId: product.ProductId, ct: token);
                 }
             }, ct);
 
@@ -158,6 +147,9 @@ namespace GrowMate.Services.Products
             var p = await _uow.Products.GetByIdAsync(id, includeCollections: true, ct);
             if (p is null) return null;
 
+            // Load primary image separately for optimization
+            var primaryMedia = await _uow.Media.GetPrimaryImageByProductIdAsync(p.ProductId, ct);
+
             return new ProductDetailResponse
             {
                 ProductId = p.ProductId,
@@ -178,7 +170,7 @@ namespace GrowMate.Services.Products
                     MediaUrl = m.MediaUrl,
                     MediaType = m.MediaType
                 }).ToList() ?? new List<MediaResponse>(),
-                MainImageUrl = p.Media?.FirstOrDefault()?.MediaUrl
+                MainImageUrl = primaryMedia?.MediaUrl ?? p.Media?.FirstOrDefault()?.MediaUrl ?? ""
             };
         }
 
@@ -216,10 +208,14 @@ namespace GrowMate.Services.Products
         // New DTO: Approved list (paged)
         public async Task<PageResult<ProductListItemResponse>> GetApprovedListAsync(int page, int pageSize, CancellationToken ct = default)
         {
-            var res = await _uow.Products.GetApprovedAsync(page, pageSize, includeCollections: true, ct);
-            return new PageResult<ProductListItemResponse>
+            var res = await _uow.Products.GetApprovedAsync(page, pageSize, includeCollections: false, ct);
+            
+            var items = new List<ProductListItemResponse>();
+            foreach (var p in res.Items)
             {
-                Items = res.Items.Select(p => new ProductListItemResponse
+                var primaryMedia = await _uow.Media.GetPrimaryImageByProductIdAsync(p.ProductId, ct);
+                
+                items.Add(new ProductListItemResponse
                 {
                     ProductId = p.ProductId,
                     Name = p.Name,
@@ -231,8 +227,13 @@ namespace GrowMate.Services.Products
                     ProductTypeName = p.ProductType?.Name,
                     UnitName = p.Unit?.Name,
                     FarmerName = p.Farmer?.FarmName,
-                    MainImageUrl = p.Media?.Select(m => m.MediaUrl).FirstOrDefault()
-                }).ToList(),
+                    MainImageUrl = primaryMedia?.MediaUrl ?? ""
+                });
+            }
+            
+            return new PageResult<ProductListItemResponse>
+            {
+                Items = items,
                 PageNumber = res.PageNumber,
                 PageSize = res.PageSize,
                 TotalItems = res.TotalItems,

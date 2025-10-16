@@ -199,7 +199,7 @@ namespace GrowMate.Controllers
                     // If this is a product item
                     if (item.ProductId.HasValue)
                     {
-                        string imageUrl = item.Product?.Media?.FirstOrDefault()?.MediaUrl;
+                        string imageUrl = item.Product?.Media?.FirstOrDefault(m => m.IsPrimary)?.MediaUrl ?? item.Product?.Media?.FirstOrDefault()?.MediaUrl;
                         response.CartItems.Add(new CartItemResponse
                         {
                             CartItemId = item.CartItemId,
@@ -226,7 +226,7 @@ namespace GrowMate.Controllers
                             Quantity = item.TreeQuantity ?? 0,
                             UnitPrice = item.TreeUnitPrice ?? 0,
                             CreatedAt = item.CreatedAt,
-                            ProductImageUrl = null
+                            ProductImageUrl = item.Listing?.Post?.Media?.FirstOrDefault(m => m.IsPrimary)?.MediaUrl ?? item.Listing?.Post?.Media?.FirstOrDefault()?.MediaUrl
                         });
                     }
                 }

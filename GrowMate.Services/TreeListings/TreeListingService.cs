@@ -64,7 +64,7 @@ namespace GrowMate.Services.TreeListings
 
         public async Task<TreeListingResponse> GetByPostIdAsync(int postId, bool includeTrees, CancellationToken ct = default)
         {
-            var item = await _unitOfWork.TreeListings.GetByIdAsync(postId, includeTrees, ct);
+            var item = await _unitOfWork.TreeListings.GetByPostIdAsync(postId, includeTrees, ct);
             if (item == null)
             {
                 return null;
