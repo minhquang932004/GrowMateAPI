@@ -1,11 +1,13 @@
-﻿using GrowMate.Contracts.Requests;
-using GrowMate.Contracts.Requests.Farmer; // Add the domain-specific namespace
+﻿using GrowMate.Contracts.Requests.Farmer;
+using GrowMate.Models; // Add the domain-specific namespace
 
 namespace GrowMate.Services.Farmers
 {
     public interface IFarmerService
     {
         Task<bool> GetFarmerByIdAsync(int id);
+
+        Task<Farmer> GetFarmerDetailByIdAsync(int farmerId, CancellationToken ct);
 
         Task UpdateFarmerAsync(int id, FarmerRequest request, CancellationToken ct);
 

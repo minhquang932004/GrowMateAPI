@@ -1,5 +1,3 @@
-using System;
-
 namespace GrowMate.Contracts.Requests.Order
 {
     /// <summary>
@@ -11,15 +9,10 @@ namespace GrowMate.Contracts.Requests.Order
         /// Optional shipping address information
         /// </summary>
         public string ShippingAddress { get; set; }
-        
+
         /// <summary>
         /// Optional additional notes for the order
         /// </summary>
         public string Notes { get; set; }
-        
-        /// <summary>
-        /// Optional preferred payment method
-        /// </summary>
-        public string PaymentMethod { get; set; }
     }
 }

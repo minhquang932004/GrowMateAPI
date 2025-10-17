@@ -1,8 +1,6 @@
-﻿using GrowMate.Contracts.Requests;
-using GrowMate.Contracts.Requests.Farmer; // Add domain-specific namespace
+﻿using GrowMate.Contracts.Requests.Farmer; // Add domain-specific namespace
 using GrowMate.Models;
 using GrowMate.Repositories.Interfaces;
-using GrowMate.Repositories.Models;
 
 namespace GrowMate.Services.Farmers
 {
@@ -13,6 +11,11 @@ namespace GrowMate.Services.Farmers
         public FarmerService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
+        }
+
+        public async Task<Farmer?> GetFarmerDetailByIdAsync(int farmerId, CancellationToken ct)
+        {
+            return await _unitOfWork.Farmers.GetByIdAsync(farmerId, ct);
         }
 
         public async Task CreateByUserId(int userId, FarmerRequest? request, CancellationToken ct)

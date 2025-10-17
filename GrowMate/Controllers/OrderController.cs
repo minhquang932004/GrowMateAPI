@@ -2,7 +2,9 @@ using GrowMate.Contracts.Requests.Order;
 using GrowMate.Contracts.Responses.Order;
 using GrowMate.Services.Carts;
 using GrowMate.Services.Customers;
+using GrowMate.Services.Farmers;
 using GrowMate.Services.Orders;
+using GrowMate.Services.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,12 +19,20 @@ namespace GrowMate.Controllers
         private readonly IOrderService _orderService;
         private readonly ICartService _cartService;
         private readonly ICustomerService _customerService;
+        private readonly IUserService _userService;
+        private readonly IFarmerService _farmerService;
 
-        public OrderController(IOrderService orderService, ICartService cartService, ICustomerService customerService)
+        public OrderController(IOrderService orderService,
+            ICartService cartService,
+            ICustomerService customerService,
+            IUserService userService,
+            IFarmerService farmerService)
         {
             _orderService = orderService;
             _cartService = cartService;
             _customerService = customerService;
+            _userService = userService;
+            _farmerService = farmerService;
         }
 
         private async Task<int?> GetCurrentCustomerIdAsync()
@@ -67,8 +77,7 @@ namespace GrowMate.Controllers
                 var order = await _orderService.CreateOrderFromCartAsync(
                     cart.CartId,
                     request?.ShippingAddress,
-                    request?.Notes,
-                    request?.PaymentMethod
+                    request?.Notes
                 );
 
                 var response = MapOrderToResponse(order);
@@ -78,8 +87,10 @@ namespace GrowMate.Controllers
             {
                 return BadRequest(new { message = ex.Message });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"Order creation error: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, new { message = "An unexpected error occurred while creating the order." });
             }
         }
@@ -207,14 +218,44 @@ namespace GrowMate.Controllers
             {
                 return null;
             }
+            string customerName = "Unknown Customer";
+            string sellerName = "Unknown Seller";
+            try
+            {
+                // Get customer name
+                var customer = _customerService.GetCustomerDetailsByIdAsync(order.CustomerId, HttpContext.RequestAborted).Result;
+                if (customer != null)
+                {
+                    var user = _userService.GetUserByIdAsync(customer.UserId, false, HttpContext.RequestAborted).Result;
+                    if (user != null)
+                    {
+                        customerName = user.FullName ?? "Customer #" + order.CustomerId;
+                        Console.WriteLine($"Found user name: {customerName} for customer ID {order.CustomerId}");
+                    }
+                }
+                if (order.SellerId > 0)
+                {
+                    // Try to get the farmer directly from the user service
+                    var farmerUser = _farmerService.GetFarmerDetailByIdAsync(order.SellerId, HttpContext.RequestAborted).Result;
+                    if (farmerUser != null)
+                    {
+                        sellerName = farmerUser.FarmName ?? "Seller #" + order.SellerId;
+                        Console.WriteLine($"Found farm name: {sellerName} for seller ID {order.SellerId}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting user names: {ex.Message}");
+            }
 
             var response = new OrderResponse
             {
                 OrderId = order.OrderId,
                 CustomerId = order.CustomerId,
-                CustomerName = order.Customer?.User?.FullName ?? "Unknown Customer",
+                CustomerName = customerName,
                 SellerId = order.SellerId,
-                SellerName = order.Seller?.FarmName ?? "Unknown Seller",
+                SellerName = sellerName,
                 Status = order.Status,
                 PaymentStatus = order.PaymentStatus,
                 Currency = order.Currency,
@@ -233,7 +274,7 @@ namespace GrowMate.Controllers
                 foreach (var item in order.OrderItems)
                 {
                     OrderItemResponse orderItemResponse;
-                    
+
                     if (item.ProductId.HasValue)
                     {
                         // Product item
@@ -286,7 +327,7 @@ namespace GrowMate.Controllers
                             ProductImageUrl = ""
                         };
                     }
-                    
+
                     response.OrderItems.Add(orderItemResponse);
                 }
             }

@@ -14,12 +14,12 @@ namespace GrowMate.Services.Orders
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Order?> CreateOrderFromCartAsync(int cartId, 
-            string? shippingAddress = null, string? notes = null, string? paymentMethod = null)
+        public async Task<Order?> CreateOrderFromCartAsync(int cartId,
+            string? shippingAddress = null, string? notes = null)
         {
             // We'll use ExecuteInTransactionAsync to ensure all operations succeed or fail together
             Order? createdOrder = null;
-            
+
             await _unitOfWork.ExecuteInTransactionAsync(async (ct) =>
             {
                 // Step 1: Get the cart with its items and product details
@@ -31,7 +31,7 @@ namespace GrowMate.Services.Orders
 
                 // Step 2: Calculate order amounts
                 decimal subtotal = 0;
-                
+
                 // Calculate subtotal from cart items (products + trees)
                 foreach (var item in cart.CartItems)
                 {
@@ -44,14 +44,14 @@ namespace GrowMate.Services.Orders
                         subtotal += (item.TreeQuantity ?? 0) * (item.TreeUnitPrice ?? 0);
                     }
                 }
-                
+
                 // Calculate shipping fee (can be based on distance, weight, etc.)
                 // For now, use a simple fixed fee
                 decimal shippingFee = 30000; // 30,000 VND
-                
+
                 // Calculate total amount (subtotal + shipping fee)
                 decimal totalAmount = subtotal + shippingFee;
-                
+
                 // Determine seller and order type
                 var firstCartItem = cart.CartItems.FirstOrDefault();
                 int sellerId;
@@ -76,7 +76,7 @@ namespace GrowMate.Services.Orders
                 {
                     throw new InvalidOperationException("Cart items are invalid.");
                 }
-                
+
                 // Step 3: Create a new order
                 var order = new Order
                 {
@@ -132,14 +132,14 @@ namespace GrowMate.Services.Orders
                         {
                             throw new InvalidOperationException($"Tree listing with ID {cartItem.ListingId} not found.");
                         }
-                        
+
                         // Get product name from the associated post
                         var post = listing.Post;
                         if (post == null)
                         {
                             throw new InvalidOperationException($"Post not found for tree listing with ID {cartItem.ListingId}.");
                         }
-                        
+
                         var orderItem = new OrderItem
                         {
                             ProductId = null, // Null for tree items (will be made nullable in DB)
@@ -159,18 +159,18 @@ namespace GrowMate.Services.Orders
 
                 // Step 5: Save the order
                 await _unitOfWork.Orders.AddAsync(order);
-                
+
                 // Step 6: Clear the cart
                 _unitOfWork.CartItems.RemoveRange(cart.CartItems);
                 cart.Status = "Ordered"; // Change cart status
                 cart.UpdatedAt = DateTime.Now;
-                
+
                 await _unitOfWork.SaveChangesAsync(ct);
-                
+
                 // Get the full order with all related data
                 createdOrder = await _unitOfWork.Orders.GetByIdAsync(order.OrderId);
             });
-            
+
             return createdOrder;
         }
 
@@ -183,7 +183,7 @@ namespace GrowMate.Services.Orders
         {
             return await _unitOfWork.Orders.GetByCustomerIdAsync(customerId);
         }
-        
+
         public async Task<bool> UpdateOrderStatusAsync(int orderId, string status, string? reason = null)
         {
             var order = await _unitOfWork.Orders.GetByIdAsync(orderId);
@@ -191,10 +191,10 @@ namespace GrowMate.Services.Orders
             {
                 return false;
             }
-            
+
             // Convert input status to uppercase for case-insensitive comparison
             string normalizedStatus = status?.ToUpper() ?? string.Empty;
-            
+
             // Validate the status is one of our defined constants
             if (normalizedStatus != OrderStatuses.Pending &&
                 normalizedStatus != OrderStatuses.Processing &&
@@ -206,14 +206,14 @@ namespace GrowMate.Services.Orders
             {
                 throw new ArgumentException($"Invalid order status: {status}");
             }
-            
+
             order.Status = normalizedStatus; // Store the uppercase version
             order.UpdatedAt = DateTime.Now;
-            
+
             await _unitOfWork.SaveChangesAsync();
             return true;
         }
-        
+
         public async Task<bool> UpdatePaymentStatusAsync(int orderId, string paymentStatus, string? transactionId = null)
         {
             var order = await _unitOfWork.Orders.GetByIdAsync(orderId);
@@ -221,7 +221,7 @@ namespace GrowMate.Services.Orders
             {
                 return false;
             }
-            
+
             // Better (case-insensitive)
             string normalizedPaymentStatus = paymentStatus?.ToUpper() ?? string.Empty;
             if (normalizedPaymentStatus != PaymentStatuses.Pending &&
@@ -233,11 +233,11 @@ namespace GrowMate.Services.Orders
             {
                 throw new ArgumentException($"Invalid payment status: {paymentStatus}");
             }
-            
+
             // Fix: Use normalizedPaymentStatus instead of paymentStatus
             order.PaymentStatus = normalizedPaymentStatus;
             order.UpdatedAt = DateTime.Now;
-            
+
             await _unitOfWork.SaveChangesAsync();
             return true;
         }
