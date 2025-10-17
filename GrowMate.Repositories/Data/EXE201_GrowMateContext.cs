@@ -200,6 +200,8 @@ public partial class EXE201_GrowMateContext : DbContext
             entity.Property(e => e.TreeUnitPrice)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("tree_unit_price");
+            entity.Property(e => e.TreeYears)
+                .HasColumnName("tree_years");
             entity.Property(e => e.UnitPrice)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("unit_price");
@@ -536,6 +538,8 @@ public partial class EXE201_GrowMateContext : DbContext
             entity.Property(e => e.TreeUnitPrice)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("tree_unit_price");
+            entity.Property(e => e.TreeYears)
+                .HasColumnName("tree_years");
             entity.Property(e => e.UnitPrice)
                 .HasColumnType("decimal(10, 2)")
                 .HasColumnName("unit_price");

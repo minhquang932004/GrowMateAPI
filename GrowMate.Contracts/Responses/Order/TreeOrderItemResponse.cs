@@ -42,6 +42,11 @@ namespace GrowMate.Contracts.Responses.Order
         /// The unit price formatted as a VND currency string
         /// </summary>
         public string TreeUnitPriceFormatted => CurrencyUtils.FormatVND(TreeUnitPrice);
+
+        /// <summary>
+        /// Number of years adopted/rented
+        /// </summary>
+        public int TreeYears { get; set; }
         
         /// <summary>
         /// The total price for this tree order item (tree_quantity * tree_unit_price) in VND

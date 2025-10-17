@@ -73,7 +73,7 @@ namespace GrowMate.Services.Carts
             return await _unitOfWork.Carts.GetByCustomerIdAsync(customerId);
         }
 
-        public async Task<Cart> AddTreeToCartAsync(int customerId, int listingId, int quantity)
+        public async Task<Cart> AddTreeToCartAsync(int customerId, int listingId, int quantity, int years)
         {
             // Get or create cart
             var cart = await _unitOfWork.Carts.GetByCustomerIdAsync(customerId);
@@ -100,6 +100,10 @@ namespace GrowMate.Services.Carts
             {
                 throw new InvalidOperationException("Quantity must be greater than zero");
             }
+            if (years <= 0)
+            {
+                throw new InvalidOperationException("Years must be greater than zero");
+            }
             if (listing.AvailableQuantity < quantity)
             {
                 throw new InvalidOperationException("Not enough available trees in this listing");
@@ -110,6 +114,12 @@ namespace GrowMate.Services.Carts
             if (cartItem != null)
             {
                 cartItem.TreeQuantity = (cartItem.TreeQuantity ?? 0) + quantity;
+                // Set/refresh years and unit price if needed
+                if (!cartItem.TreeYears.HasValue || cartItem.TreeYears.Value != years)
+                {
+                    cartItem.TreeYears = years;
+                    cartItem.TreeUnitPrice = listing.PricePerTree * years;
+                }
             }
             else
             {
@@ -118,7 +128,8 @@ namespace GrowMate.Services.Carts
                     CartId = cart.CartId,
                     ListingId = listingId,
                     TreeQuantity = quantity,
-                    TreeUnitPrice = listing.PricePerTree,
+                    TreeUnitPrice = listing.PricePerTree * years,
+                    TreeYears = years,
                     CreatedAt = DateTime.Now
                 };
                 await _unitOfWork.CartItems.AddAsync(cartItem);
@@ -158,7 +169,7 @@ namespace GrowMate.Services.Carts
             return true;
         }
 
-        public async Task<CartItem> UpdateCartItemQuantityAsync(int cartItemId, int quantity)
+        public async Task<CartItem> UpdateCartItemQuantityAsync(int cartItemId, int quantity, int? years = null)
         {
             // Find the cart item
             var cartItem = await _unitOfWork.CartItems.GetByIdAsync(cartItemId);
@@ -194,6 +205,11 @@ namespace GrowMate.Services.Carts
                         throw new InvalidOperationException("Requested tree quantity exceeds available quantity");
                     }
                     cartItem.TreeQuantity = quantity;
+                    if (years.HasValue && years.Value > 0)
+                    {
+                        cartItem.TreeYears = years.Value;
+                        cartItem.TreeUnitPrice = listing.PricePerTree * years.Value;
+                    }
                 }
                 
                 // Update the cart's timestamp

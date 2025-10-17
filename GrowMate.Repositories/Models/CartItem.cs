@@ -25,6 +25,8 @@ public partial class CartItem
 
     public decimal? TreeUnitPrice { get; set; }
 
+    public int? TreeYears { get; set; }
+
     public virtual Cart Cart { get; set; }
 
     public virtual TreeListing Listing { get; set; }

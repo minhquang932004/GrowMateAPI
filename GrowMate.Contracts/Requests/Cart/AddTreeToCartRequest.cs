@@ -14,6 +14,11 @@ namespace GrowMate.Contracts.Requests.Cart
         /// Number of trees to add
         /// </summary>
         public int Quantity { get; set; }
+
+        /// <summary>
+        /// Number of years to adopt/rent the tree(s)
+        /// </summary>
+        public int Years { get; set; }
     }
 }
 

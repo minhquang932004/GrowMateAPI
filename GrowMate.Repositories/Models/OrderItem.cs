@@ -31,6 +31,8 @@ public partial class OrderItem
 
     public decimal? TreeTotalPrice { get; set; }
 
+    public int? TreeYears { get; set; }
+
     public virtual TreeListing Listing { get; set; }
 
     public virtual Order Order { get; set; }

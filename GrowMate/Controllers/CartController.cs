@@ -95,7 +95,7 @@ namespace GrowMate.Controllers
         [HttpPost("trees")]
         public async Task<IActionResult> AddTreeToCart([FromBody] AddTreeToCartRequest request)
         {
-            if (request == null || request.Quantity <= 0)
+            if (request == null || request.Quantity <= 0 || request.Years <= 0)
             {
                 return BadRequest(new { Message = "Invalid request payload." });
             }
@@ -108,7 +108,7 @@ namespace GrowMate.Controllers
 
             try
             {
-                var cart = await _cartService.AddTreeToCartAsync(customerId.Value, request.ListingId, request.Quantity);
+                var cart = await _cartService.AddTreeToCartAsync(customerId.Value, request.ListingId, request.Quantity, request.Years);
                 var response = MapCartToResponse(cart);
                 return Ok(response);
             }
@@ -138,7 +138,7 @@ namespace GrowMate.Controllers
 
             try
             {
-                var updatedItem = await _cartService.UpdateCartItemQuantityAsync(cartItemId, request.Quantity);
+                var updatedItem = await _cartService.UpdateCartItemQuantityAsync(cartItemId, request.Quantity, request.Years);
             }
             catch (InvalidOperationException)
             {
@@ -226,7 +226,8 @@ namespace GrowMate.Controllers
                             Quantity = item.TreeQuantity ?? 0,
                             UnitPrice = item.TreeUnitPrice ?? 0,
                             CreatedAt = item.CreatedAt,
-                            ProductImageUrl = item.Listing?.Post?.Media?.FirstOrDefault(m => m.IsPrimary)?.MediaUrl ?? item.Listing?.Post?.Media?.FirstOrDefault()?.MediaUrl
+                            ProductImageUrl = item.Listing?.Post?.Media?.FirstOrDefault(m => m.IsPrimary)?.MediaUrl ?? item.Listing?.Post?.Media?.FirstOrDefault()?.MediaUrl,
+                            Years = item.TreeYears
                         });
                     }
                 }

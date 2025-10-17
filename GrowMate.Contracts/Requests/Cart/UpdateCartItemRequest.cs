@@ -9,5 +9,10 @@ namespace GrowMate.Contracts.Requests.Cart
         /// The new quantity for the cart item
         /// </summary>
         public int Quantity { get; set; }
+
+        /// <summary>
+        /// Optional: number of years for tree listings
+        /// </summary>
+        public int? Years { get; set; }
     }
 }

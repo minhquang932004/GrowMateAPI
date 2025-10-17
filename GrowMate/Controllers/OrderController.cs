@@ -306,6 +306,7 @@ namespace GrowMate.Controllers
                             FarmName = post?.FarmName ?? "",
                             TreeQuantity = item.TreeQuantity ?? 0,
                             TreeUnitPrice = item.TreeUnitPrice ?? 0,
+                            TreeYears = item.TreeYears ?? 1,
                             TreeTotalPriceFromDb = item.TreeTotalPrice,
                             CreatedAt = item.CreatedAt,
                             ProductImageUrl = post?.Media?.FirstOrDefault(m => m.IsPrimary)?.MediaUrl ?? post?.Media?.FirstOrDefault()?.MediaUrl ?? ""

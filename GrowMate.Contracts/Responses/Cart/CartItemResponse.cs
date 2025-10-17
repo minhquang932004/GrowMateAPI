@@ -66,5 +66,10 @@ namespace GrowMate.Contracts.Responses.Cart
 
         // Tree listing (adoption) fields reuse existing names
         // Quantity + UnitPrice will be used for tree items via mapping in controller
+        
+        /// <summary>
+        /// Optional: number of years for tree listings; null for product items
+        /// </summary>
+        public int? Years { get; set; }
     }
 }

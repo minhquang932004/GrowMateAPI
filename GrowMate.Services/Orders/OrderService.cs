@@ -150,6 +150,7 @@ namespace GrowMate.Services.Orders
                             ListingId = cartItem.ListingId,
                             TreeQuantity = cartItem.TreeQuantity,
                             TreeUnitPrice = cartItem.TreeUnitPrice,
+                            TreeYears = cartItem.TreeYears,
                             TreeTotalPrice = (cartItem.TreeQuantity ?? 0) * (cartItem.TreeUnitPrice ?? 0),
                             CreatedAt = DateTime.Now
                         };
