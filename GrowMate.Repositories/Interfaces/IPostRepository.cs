@@ -13,5 +13,6 @@ namespace GrowMate.Repositories.Interfaces
 
         Task<PageResult<Post>> GetAllAsync(int page, int pageSize, CancellationToken ct = default);
         Task<PageResult<Post>> GetByFarmerIdAsync(int farmerId, int page, int pageSize, CancellationToken ct = default);
+        Task<PageResult<Post>> GetByStatusAsync(string status, int page, int pageSize, CancellationToken ct = default);
     }
 }

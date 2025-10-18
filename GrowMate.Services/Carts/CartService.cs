@@ -104,10 +104,6 @@ namespace GrowMate.Services.Carts
             {
                 throw new InvalidOperationException("Years must be greater than zero");
             }
-            if (listing.AvailableQuantity < quantity)
-            {
-                throw new InvalidOperationException("Not enough available trees in this listing");
-            }
 
             // Find existing cart item by listing
             var cartItem = cart.CartItems?.FirstOrDefault(ci => ci.ListingId == listingId);
@@ -194,21 +190,15 @@ namespace GrowMate.Services.Carts
                 }
                 else if (cartItem.ListingId.HasValue)
                 {
-                    // Optional: validate against available quantity of listing
-                    var listing = await _unitOfWork.TreeListings.GetByIdAsync(cartItem.ListingId.Value, includeTrees: false);
-                    if (listing == null)
-                    {
-                        throw new InvalidOperationException("Tree listing not found");
-                    }
-                    if (quantity > listing.AvailableQuantity)
-                    {
-                        throw new InvalidOperationException("Requested tree quantity exceeds available quantity");
-                    }
                     cartItem.TreeQuantity = quantity;
                     if (years.HasValue && years.Value > 0)
                     {
-                        cartItem.TreeYears = years.Value;
-                        cartItem.TreeUnitPrice = listing.PricePerTree * years.Value;
+                        var listing = await _unitOfWork.TreeListings.GetByIdAsync(cartItem.ListingId.Value, includeTrees: false);
+                        if (listing != null)
+                        {
+                            cartItem.TreeYears = years.Value;
+                            cartItem.TreeUnitPrice = listing.PricePerTree * years.Value;
+                        }
                     }
                 }
                 

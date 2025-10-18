@@ -22,12 +22,12 @@ namespace GrowMateWebAPIs.Controllers
         }
 
         /// <summary>
-        /// Get all posts, or filter by postId or farmerId.
+        /// Get all posts, or filter by postId, farmerId, or status.
         /// </summary>
         /// <remarks>Role: Anonymous (anyone can access)</remarks>
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetAllPosts([FromQuery] int? postId, [FromQuery] int? farmerId,
+        public async Task<IActionResult> GetAllPosts([FromQuery] int? postId, [FromQuery] int? farmerId, [FromQuery] string? status,
             [FromQuery] int page = 1, [FromQuery] int pageSize = 3, CancellationToken ct = default)
         {
             if (postId.HasValue)
@@ -45,6 +45,14 @@ namespace GrowMateWebAPIs.Controllers
                 var item = await _postService.GetAllPostsByFarmerIdAsync(farmerId.Value, page, pageSize, ct);
                 if (item.Items == null || item.Items.Count == 0)
                     return NotFound("Không tìm thấy các bài đăng của farmerId: " + farmerId);
+                return Ok(item);
+            }
+
+            if (!string.IsNullOrEmpty(status))
+            {
+                var item = await _postService.GetAllPostsByStatusAsync(status, page, pageSize, ct);
+                if (item.Items == null || item.Items.Count == 0)
+                    return NotFound("Không tìm thấy bài đăng nào với status: " + status);
                 return Ok(item);
             }
 

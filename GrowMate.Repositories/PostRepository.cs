@@ -3,6 +3,7 @@ using GrowMate.Repositories.Data;
 using GrowMate.Repositories.Extensions;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Repositories.Models;
+using GrowMate.Repositories.Models.Statuses;
 using Microsoft.EntityFrameworkCore;
 
 namespace GrowMate.Repositories
@@ -49,6 +50,15 @@ namespace GrowMate.Repositories
         {
             var q = _dbContext.Posts.AsNoTracking()
                 .Where(p => p.FarmerId == farmerId)
+                .OrderByDescending(p => p.CreatedAt);
+
+            return q.ToPagedResultAsync(page, pageSize, ct);
+        }
+
+        public Task<PageResult<Post>> GetByStatusAsync(string status, int page, int pageSize, CancellationToken ct = default)
+        {
+            var q = _dbContext.Posts.AsNoTracking()
+                .Where(p => p.Status == status)
                 .OrderByDescending(p => p.CreatedAt);
 
             return q.ToPagedResultAsync(page, pageSize, ct);

@@ -108,9 +108,17 @@ namespace GrowMate.Services.Orders
                         {
                             throw new InvalidOperationException($"Product with ID {cartItem.ProductId} not found.");
                         }
+                        
+                        // Validate product status - must be APPROVED
+                        if (product.Status != ProductStatuses.Approved)
+                        {
+                            throw new InvalidOperationException($"Sản phẩm '{product.Name}' chưa được phê duyệt để đặt hàng. Trạng thái hiện tại: {product.Status}");
+                        }
+                        
+                        // Validate stock quantity
                         if (product.Stock < cartItem.Quantity)
                         {
-                            throw new InvalidOperationException($"Not enough stock for product: {product.Name}. Available: {product.Stock}, Requested: {cartItem.Quantity}");
+                            throw new InvalidOperationException($"Không đủ hàng cho sản phẩm '{product.Name}'. Có sẵn: {product.Stock}, Yêu cầu: {cartItem.Quantity}");
                         }
                         var orderItem = new OrderItem
                         {
@@ -121,8 +129,6 @@ namespace GrowMate.Services.Orders
                             TotalPrice = cartItem.UnitPrice * cartItem.Quantity,
                             CreatedAt = DateTime.Now
                         };
-                        product.Stock -= cartItem.Quantity;
-                        _unitOfWork.Products.Update(product);
                         order.OrderItems.Add(orderItem);
                     }
                     else if (cartItem.ListingId.HasValue)
@@ -138,6 +144,18 @@ namespace GrowMate.Services.Orders
                         if (post == null)
                         {
                             throw new InvalidOperationException($"Post not found for tree listing with ID {cartItem.ListingId}.");
+                        }
+
+                        // Validate tree listing status - must be Active
+                        if (listing.Status != TreeListingStatuses.Active)
+                        {
+                            throw new InvalidOperationException($"Cây '{post.ProductName}' không khả dụng để đặt hàng. Trạng thái hiện tại: {listing.Status}");
+                        }
+
+                        // Validate available quantity
+                        if (listing.AvailableQuantity < (cartItem.TreeQuantity ?? 0))
+                        {
+                            throw new InvalidOperationException($"Không đủ số lượng cây '{post.ProductName}'. Có sẵn: {listing.AvailableQuantity}, Yêu cầu: {cartItem.TreeQuantity}");
                         }
 
                         var orderItem = new OrderItem

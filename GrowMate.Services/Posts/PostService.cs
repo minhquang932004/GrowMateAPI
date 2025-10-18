@@ -114,6 +114,50 @@ namespace GrowMate.Services.Posts
             };
         }
 
+        public async Task<PageResult<PostListItemResponse>> GetAllPostsByStatusAsync(string status, int page, int pageSize, CancellationToken ct = default)
+        {
+            // Validate status - normalize to uppercase
+            var normalizedStatus = status?.ToUpperInvariant();
+            
+            var result = await _unitOfWork.Posts.GetByStatusAsync(normalizedStatus, page, pageSize, ct);
+            
+            var items = new List<PostListItemResponse>();
+            foreach (var post in result.Items)
+            {
+                var primaryMedia = await _unitOfWork.Media.GetPrimaryImageByPostIdAsync(post.PostId, ct);
+                
+                items.Add(new PostListItemResponse
+                {
+                    PostId = post.PostId,
+                    FarmerId = post.FarmerId,
+                    ProductName = post.ProductName,
+                    ProductType = post.ProductType,
+                    ProductVariety = post.ProductVariety,
+                    FarmName = post.FarmName,
+                    Origin = post.Origin,
+                    PricePerYear = post.PricePerYear,
+                    HarvestWeight = post.HarvestWeight,
+                    Unit = post.Unit,
+                    HarvestFrequency = post.HarvestFrequency,
+                    TreeQuantity = post.TreeQuantity,
+                    Description = post.Description,
+                    Status = post.Status,
+                    CreatedAt = post.CreatedAt,
+                    UpdatedAt = post.UpdatedAt,
+                    PrimaryImageUrl = primaryMedia?.MediaUrl ?? ""
+                });
+            }
+            
+            return new PageResult<PostListItemResponse>
+            {
+                Items = items,
+                PageNumber = result.PageNumber,
+                PageSize = result.PageSize,
+                TotalItems = result.TotalItems,
+                TotalPages = result.TotalPages
+            };
+        }
+
         public async Task<PostResponse?> GetPostByIdAsync(int id, CancellationToken ct = default)
         {
             var post = await _unitOfWork.Posts.GetByIdAsync(id, includeCollections: true, ct);
