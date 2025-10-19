@@ -208,7 +208,8 @@ namespace GrowMate.Services.Products
         // New DTO: Approved list (paged)
         public async Task<PageResult<ProductListItemResponse>> GetApprovedListAsync(int page, int pageSize, CancellationToken ct = default)
         {
-            var res = await _uow.Products.GetApprovedAsync(page, pageSize, includeCollections: false, ct);
+            // Include related basic entities so names are populated in the list response
+            var res = await _uow.Products.GetApprovedAsync(page, pageSize, includeCollections: true, ct);
             
             var items = new List<ProductListItemResponse>();
             foreach (var p in res.Items)
