@@ -91,5 +91,10 @@ namespace GrowMate.Contracts.Responses.Post
         /// URL to the primary image of the post (optimized - only primary image URL)
         /// </summary>
         public string PrimaryImageUrl { get; set; }
+
+        /// <summary>
+        /// Mã post (post_code) sinh tự động từ productName
+        /// </summary>
+        public string PostCode { get; set; }
     }
 }

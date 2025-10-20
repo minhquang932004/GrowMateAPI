@@ -12,6 +12,7 @@ using GrowMate.Services.Farmers;
 using GrowMate.Services.Media;
 using GrowMate.Services.TreeListings;
 using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 
 namespace GrowMate.Services.Posts
 {
@@ -30,6 +31,28 @@ namespace GrowMate.Services.Posts
             _logger = logger;
             _mediaService = mediaService;
             _treeListingService = treeListingService;
+        }
+
+        /// <summary>
+        /// Tạo PostCode tự động từ ProductName + random số
+        /// </summary>
+        private string GeneratePostCode(string productName)
+        {
+            // Lấy các chữ cái đầu của từng từ trong ProductName
+            var words = productName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var initials = string.Join("", words.Select(w => w.Length > 0 ? w[0].ToString().ToUpper() : ""));
+            
+            // Giới hạn tối đa 6 ký tự để tránh quá dài
+            if (initials.Length > 6)
+            {
+                initials = initials.Substring(0, 6);
+            }
+            
+            // Thêm random 3-4 số
+            var random = new Random();
+            var randomNumber = random.Next(100, 9999); // 3-4 số
+            
+            return $"{initials}{randomNumber}";
         }
 
         public async Task<PageResult<PostListItemResponse>> GetAllPostsAsync(int page, int pageSize, CancellationToken ct = default)
@@ -59,7 +82,8 @@ namespace GrowMate.Services.Posts
                     Status = post.Status,
                     CreatedAt = post.CreatedAt,
                     UpdatedAt = post.UpdatedAt,
-                    PrimaryImageUrl = primaryMedia?.MediaUrl ?? ""
+                    PrimaryImageUrl = primaryMedia?.MediaUrl ?? "",
+                    PostCode = post.PostCode
                 });
             }
             
@@ -100,7 +124,8 @@ namespace GrowMate.Services.Posts
                     Status = post.Status,
                     CreatedAt = post.CreatedAt,
                     UpdatedAt = post.UpdatedAt,
-                    PrimaryImageUrl = primaryMedia?.MediaUrl ?? ""
+                    PrimaryImageUrl = primaryMedia?.MediaUrl ?? "",
+                    PostCode = post.PostCode
                 });
             }
             
@@ -144,7 +169,8 @@ namespace GrowMate.Services.Posts
                     Status = post.Status,
                     CreatedAt = post.CreatedAt,
                     UpdatedAt = post.UpdatedAt,
-                    PrimaryImageUrl = primaryMedia?.MediaUrl ?? ""
+                    PrimaryImageUrl = primaryMedia?.MediaUrl ?? "",
+                    PostCode = post.PostCode
                 });
             }
             
@@ -227,6 +253,7 @@ namespace GrowMate.Services.Posts
                         TreeQuantity = request.TreeQuantity,
                         Description = request.Description,
                         Status = PostStatuses.Pending,             // <- was "PENDING"
+                        PostCode = GeneratePostCode(request.ProductName),
                         CreatedAt = DateTime.Now,
                         UpdatedAt = DateTime.Now
                     };
@@ -330,6 +357,7 @@ namespace GrowMate.Services.Posts
                             TotalQuantity = post.TreeQuantity,
                             AvailableQuantity = post.TreeQuantity,
                             Status = TreeListingStatuses.Active,
+                            PostCode = post.PostCode, // Copy PostCode từ Post
                             CreatedAt = DateTime.Now,
                             UpdatedAt = DateTime.Now,
                         };
@@ -348,6 +376,7 @@ namespace GrowMate.Services.Posts
                             TotalQuantity = checkQuantity,
                             AvailableQuantity = post.TreeQuantity,
                             Status = TreeListingStatuses.Active,
+                            PostCode = post.PostCode, // Copy PostCode từ Post
                             CreatedAt = checkList.CreatedAt,
                             UpdatedAt = DateTime.Now,
                         };
@@ -365,6 +394,7 @@ namespace GrowMate.Services.Posts
                             TotalQuantity = post.TreeQuantity,
                             AvailableQuantity = post.TreeQuantity,
                             Status = TreeListingStatuses.Removed,
+                            PostCode = post.PostCode, // Copy PostCode từ Post
                             CreatedAt = checkList.CreatedAt,
                             UpdatedAt = DateTime.Now,
                         };

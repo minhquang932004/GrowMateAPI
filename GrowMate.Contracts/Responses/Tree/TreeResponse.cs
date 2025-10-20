@@ -2,49 +2,49 @@ using System;
 
 namespace GrowMate.Contracts.Responses.Tree
 {
-    /// <summary>
-    /// Response model representing a specific tree in a tree listing
-    /// </summary>
     public class TreeResponse
     {
-        /// <summary>
-        /// The unique identifier for the tree
-        /// </summary>
         public int TreeId { get; set; }
-
-        /// <summary>
-        /// The identifier of the listing this tree belongs to
-        /// </summary>
         public int ListingId { get; set; }
-
-        /// <summary>
-        /// A unique code identifying this specific tree
-        /// </summary>
         public string UniqueCode { get; set; }
+        public string? Description { get; set; }
+        public string? Coordinates { get; set; }
+        public string? HealthStatus { get; set; }
+        public string? AvailabilityStatus { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public string TreeName { get; set; }
+        public string FarmerName { get; set; }
+        public string PrimaryImageUrl { get; set; }
+    }
 
-        /// <summary>
-        /// Detailed description of the tree
-        /// </summary>
-        public string Description { get; set; }
+    public class TreeDetailResponse
+    {
+        public int TreeId { get; set; }
+        public int ListingId { get; set; }
+        public string UniqueCode { get; set; }
+        public string? Description { get; set; }
+        public string? Coordinates { get; set; }
+        public string? HealthStatus { get; set; }
+        public string? AvailabilityStatus { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public string TreeName { get; set; }
+        public string FarmerName { get; set; }
+        public string PrimaryImageUrl { get; set; }
+        public decimal PricePerTree { get; set; }
+        public int TotalQuantity { get; set; }
+        public int AvailableQuantity { get; set; }
+        public string ListingStatus { get; set; }
+        public List<AdoptionSummaryResponse> Adoptions { get; set; } = new();
+    }
 
-        /// <summary>
-        /// Geographic coordinates where the tree is located
-        /// </summary>
-        public string Coordinates { get; set; }
-
-        /// <summary>
-        /// Current health status of the tree
-        /// </summary>
-        public string HealthStatus { get; set; }
-
-        /// <summary>
-        /// Current availability status of the tree (e.g., Available, Reserved, Sold)
-        /// </summary>
-        public string AvailabilityStatus { get; set; }
-
-        /// <summary>
-        /// The date and time when the tree record was created
-        /// </summary>
+    public class AdoptionSummaryResponse
+    {
+        public int AdoptionId { get; set; }
+        public int CustomerId { get; set; }
+        public string CustomerName { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public string Status { get; set; }
         public DateTime? CreatedAt { get; set; }
     }
 }

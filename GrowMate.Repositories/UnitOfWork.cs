@@ -21,7 +21,10 @@ namespace GrowMate.Repositories
             IProductRepository products,
             IOrderRepository orders,
             ICartRepository carts,
-            ICartItemRepository cartItems
+        ICartItemRepository cartItems,
+        IAdoptionRepository adoptions,
+        ITreeRepository trees,
+        IPaymentRepository payments
         )
         {
             _dbContext = dbContext;
@@ -36,6 +39,9 @@ namespace GrowMate.Repositories
             Orders = orders;
             Carts = carts;
             CartItems = cartItems;
+            Adoptions = adoptions;
+            Trees = trees;
+            Payments = payments;
         }
 
         public IUserRepository Users { get; }
@@ -49,6 +55,9 @@ namespace GrowMate.Repositories
         public IOrderRepository Orders { get; }
         public ICartRepository Carts { get; }
         public ICartItemRepository CartItems { get; }
+        public IAdoptionRepository Adoptions { get; }
+        public ITreeRepository Trees { get; }
+        public IPaymentRepository Payments { get; }
 
         public Task<int> SaveChangesAsync(CancellationToken ct = default)
             => _dbContext.SaveChangesAsync(ct);
