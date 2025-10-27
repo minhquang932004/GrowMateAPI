@@ -67,7 +67,7 @@ jobs:
         with:
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_2D0D690E3911430E918029CC17701F5E }}
 
-      # ✅ Set the correct startup command (fixes runtime confusion)
+      # Set the correct startup command (fixes runtime confusion)
       - name: Set startup command
         run: |
           az webapp config set \
