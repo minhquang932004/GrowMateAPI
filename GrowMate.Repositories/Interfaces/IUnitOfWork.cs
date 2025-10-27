@@ -13,6 +13,9 @@
         IOrderRepository Orders { get; }
         ICartRepository Carts { get; }
         ICartItemRepository CartItems { get; }
+        IAdoptionRepository Adoptions { get; }
+        ITreeRepository Trees { get; }
+        IPaymentRepository Payments { get; }
 
         Task<int> SaveChangesAsync(CancellationToken ct = default);
         Task ExecuteInTransactionAsync(Func<CancellationToken, Task> action, CancellationToken ct = default);

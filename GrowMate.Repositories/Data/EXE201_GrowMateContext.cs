@@ -96,6 +96,15 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasDefaultValue("active")
                 .HasColumnName("status");
             entity.Property(e => e.TreeId).HasColumnName("tree_id");
+            entity.Property(e => e.FarmerId).HasColumnName("farmer_id");
+            entity.Property(e => e.ProductName)
+                .IsRequired()
+                .HasMaxLength(255)
+                .HasColumnName("product_name");
+            entity.Property(e => e.Years).HasColumnName("years");
+            entity.Property(e => e.PrimaryImageUrl)
+                .HasMaxLength(500)
+                .HasColumnName("primary_image_url");
 
             entity.HasOne(d => d.Customer).WithMany(p => p.Adoptions)
                 .HasForeignKey(d => d.CustomerId)
@@ -656,6 +665,10 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasMaxLength(50)
                 .HasDefaultValue("draft")
                 .HasColumnName("status");
+            entity.Property(e => e.PostCode)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasColumnName("post_code");
             entity.Property(e => e.TreeQuantity).HasColumnName("tree_quantity");
             entity.Property(e => e.Unit)
                 .HasMaxLength(50)
@@ -943,6 +956,10 @@ public partial class EXE201_GrowMateContext : DbContext
                 .HasMaxLength(50)
                 .HasDefaultValue("active")
                 .HasColumnName("status");
+            entity.Property(e => e.PostCode)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasColumnName("post_code");
             entity.Property(e => e.TotalQuantity).HasColumnName("total_quantity");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("(getdate())")

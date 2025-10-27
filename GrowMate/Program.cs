@@ -11,6 +11,9 @@ using GrowMate.Services.Orders;
 using GrowMate.Services.Posts;
 using GrowMate.Services.Products;
 using GrowMate.Services.TreeListings;
+using GrowMate.Services.Trees;
+using GrowMate.Services.Adoptions;
+using GrowMate.Services.Payments;
 using GrowMate.Services.Users;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -29,12 +32,7 @@ if (builder.Environment.IsDevelopment())
     builder.Configuration.AddJsonFile("Secret/appsettings.Secret.json", optional: true, reloadOnChange: true);
 }
 
-// XML comments for Swagger
-builder.Services.AddSwaggerGen(options =>
-{
-    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
-});
+// XML comments will be configured in the unified Swagger setup below
 
 // Add Repositories to the DI container
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -48,6 +46,9 @@ builder.Services.AddScoped<ITreeListingRepository, TreeListingRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<ICartRepository, CartRepository>();
+builder.Services.AddScoped<IAdoptionRepository, AdoptionRepository>();
+builder.Services.AddScoped<ITreeRepository, TreeRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<ICartItemRepository, CartItemRepository>();
 
 // DbContext for EF Core tools and runtime
@@ -69,6 +70,9 @@ builder.Services.AddScoped<ITreeListingService, TreeListingService>();
 builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IAdoptionService, AdoptionService>();
+builder.Services.AddScoped<ITreeService, TreeService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
 
@@ -121,6 +125,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "GrowMate API", Version = "v1" });
+    // Avoid schema ID collisions for types with the same class name in different namespaces
+    c.CustomSchemaIds(type => type.FullName?.Replace('+', '.') ?? type.Name);
+    // Include XML comments
+    var xmlFilename = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization using the Bearer scheme. Paste ONLY the token (no 'Bearer ' prefix).",
@@ -154,7 +163,7 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
     app.UseSwagger();
     app.UseSwaggerUI();

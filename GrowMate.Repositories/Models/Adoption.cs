@@ -23,6 +23,14 @@ public partial class Adoption
 
     public int? OrderId { get; set; }
 
+    public int FarmerId { get; set; }
+
+    public string ProductName { get; set; }
+
+    public int Years { get; set; }
+
+    public string PrimaryImageUrl { get; set; }
+
     public virtual Customer Customer { get; set; }
 
     public virtual ICollection<MonthlyReport> MonthlyReports { get; set; } = new List<MonthlyReport>();

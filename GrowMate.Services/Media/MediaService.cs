@@ -41,12 +41,13 @@ namespace GrowMate.Services.Media
             {
                 var mediaItem = mediaItems[i];
                 
-                if (!Enum.TryParse<MediaType>(mediaItem.MediaType, out var mediaTypeEnum))
+                // Parse enum không phân biệt hoa/thường để chấp nhận "image"/"Image"/"IMAGE"...
+                if (!Enum.TryParse<MediaType>(mediaItem.MediaType, true, out var mediaTypeEnum))
                     throw new ArgumentException($"Invalid media type: {mediaItem.MediaType}");
 
                 // Set primary to first Image found, skip if it's Video and no Image primary yet
                 bool isPrimary = false;
-                if (!primarySet && mediaTypeEnum.ToString().ToLower() == "image")
+                if (!primarySet && mediaTypeEnum.ToString().Equals("image", StringComparison.OrdinalIgnoreCase))
                 {
                     isPrimary = true;
                     primarySet = true;
