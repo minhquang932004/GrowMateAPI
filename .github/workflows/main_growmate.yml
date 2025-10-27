@@ -31,11 +31,11 @@ jobs:
 
       # Build only your Web API project
       - name: Build GrowMate Web API
-        run: dotnet build GrowMateWebAPIs/GrowMateWebAPIs.csproj --configuration Release
+        run: dotnet build GrowMate/GrowMateWebAPIs.csproj --configuration Release
 
       # Publish the Web API to an output folder
       - name: Publish GrowMate Web API
-        run: dotnet publish GrowMateWebAPIs/GrowMateWebAPIs.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
+        run: dotnet publish GrowMate/GrowMateWebAPIs.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
       # Upload artifact for deployment
       - name: Upload artifact for deployment job
