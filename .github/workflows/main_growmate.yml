@@ -20,27 +20,12 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      # Optional caching to speed up restore
-      - name: Cache .NET packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      # Restore and build only the Web API project
-      - name: Restore dependencies
-        run: dotnet restore GrowMate/GrowMateWebAPIs.csproj
-
       - name: Build GrowMate Web API
-        run: dotnet build GrowMate/GrowMateWebAPIs.csproj --configuration Release --no-restore
+        run: dotnet build GrowMate/GrowMateWebAPIs.csproj --configuration Release
 
-      # Publish the Web API to an output folder
       - name: Publish GrowMate Web API
-        run: dotnet publish GrowMate/GrowMateWebAPIs.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp --no-build
+        run: dotnet publish GrowMate/GrowMateWebAPIs.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
-      # Upload artifact for deployment
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
@@ -58,18 +43,6 @@ jobs:
           name: .net-app
           path: ./myapp
 
-      - name: Set ASPNETCORE_ENVIRONMENT to Production
-        run: echo "ASPNETCORE_ENVIRONMENT=Production" >> $GITHUB_ENV
-
-      # Set the correct startup command (fixes runtime confusion)
-      - name: Set startup command
-        run: |
-          az webapp config set \
-            --name GrowMate \
-            --resource-group GrowMate \
-            --startup-file "dotnet GrowMateWebAPIs.dll"
-
-      # Deploy the Web API to Azure App Service
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
