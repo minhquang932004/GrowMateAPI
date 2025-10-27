@@ -44,6 +44,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
+          path: ./myapp
 
       - name: Set ASPNETCORE_ENVIRONMENT to Production
         run: echo "ASPNETCORE_ENVIRONMENT=Production" >> $GITHUB_ENV
@@ -54,5 +55,5 @@ jobs:
         with:
           app-name: 'GrowMate'
           slot-name: 'Production'
-          package: ./.net-app
+          package: ./myapp
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_2D0D690E3911430E918029CC17701F5E }}
