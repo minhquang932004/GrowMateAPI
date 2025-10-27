@@ -50,5 +50,5 @@ jobs:
           app-name: 'GrowMate'
           slot-name: 'Production'
           package: ./myapp
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_2D0D690E3911430E918029CC17701F5E }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F51F2E5B05BA413EBBD17A986F6A465C }}
 
