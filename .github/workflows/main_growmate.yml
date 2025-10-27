@@ -1,4 +1,4 @@
-name: Build and deploy ASP.Net Core app to Azure Web App - GrowMate
+﻿name: Build and deploy ASP.Net Core app to Azure Web App - GrowMate
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      # Optional caching to speed up build
+      # Optional caching to speed up restore
       - name: Cache .NET packages
         uses: actions/cache@v4
         with:
@@ -29,13 +29,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      # Build only your Web API project
+      # Restore and build only the Web API project
+      - name: Restore dependencies
+        run: dotnet restore GrowMate/GrowMateWebAPIs.csproj
+
       - name: Build GrowMate Web API
-        run: dotnet build GrowMate/GrowMateWebAPIs.csproj --configuration Release
+        run: dotnet build GrowMate/GrowMateWebAPIs.csproj --configuration Release --no-restore
 
       # Publish the Web API to an output folder
       - name: Publish GrowMate Web API
-        run: dotnet publish GrowMate/GrowMateWebAPIs.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
+        run: dotnet publish GrowMate/GrowMateWebAPIs.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp --no-build
 
       # Upload artifact for deployment
       - name: Upload artifact for deployment job
@@ -58,6 +61,21 @@ jobs:
       - name: Set ASPNETCORE_ENVIRONMENT to Production
         run: echo "ASPNETCORE_ENVIRONMENT=Production" >> $GITHUB_ENV
 
+      # Optional: Ensure Azure CLI is available
+      - name: Log in to Azure CLI
+        uses: azure/login@v2
+        with:
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_2D0D690E3911430E918029CC17701F5E }}
+
+      # ✅ Set the correct startup command (fixes runtime confusion)
+      - name: Set startup command
+        run: |
+          az webapp config set \
+            --name GrowMate \
+            --resource-group GrowMate \
+            --startup-file "dotnet GrowMateWebAPIs.dll"
+
+      # Deploy the Web API to Azure App Service
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
