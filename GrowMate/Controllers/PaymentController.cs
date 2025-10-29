@@ -4,6 +4,7 @@ using GrowMate.Services.Payments;
 using GrowMate.Repositories.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace GrowMate.Controllers
 {
@@ -17,6 +18,42 @@ namespace GrowMate.Controllers
         public PaymentController(IPaymentService paymentService)
         {
             _paymentService = paymentService;
+        }
+
+        /// <summary>
+        /// Tạo QR thanh toán (SEPAY) cho order
+        /// </summary>
+        /// <remarks>Role: Authenticated User</remarks>
+        [HttpPost("qr")]
+        public async Task<IActionResult> CreateSepayQr([FromBody] CreateSepayQrRequest request)
+        {
+            if (request == null || request.OrderId <= 0)
+            {
+                return BadRequest(new { Message = "Dữ liệu request không hợp lệ." });
+            }
+
+            var qr = await _paymentService.CreateSepayQrAsync(request.OrderId, request.ExpiresMinutes, HttpContext.RequestAborted);
+            return Ok(qr);
+        }
+
+        /// <summary>
+        /// Webhook từ Sepay (API Key qua header Authorization: Apikey ...)
+        /// </summary>
+        /// <remarks>AllowAnonymous để Sepay gọi.</remarks>
+        [AllowAnonymous]
+        [HttpPost("webhook/sepay")]
+        public async Task<IActionResult> SepayWebhook()
+        {
+            using var reader = new StreamReader(Request.Body, Encoding.UTF8);
+            var body = await reader.ReadToEndAsync();
+            var auth = Request.Headers["Authorization"].ToString();
+
+            var result = await _paymentService.ProcessSepayWebhookAsync(auth, body, HttpContext.RequestAborted);
+            if (!result.Success)
+            {
+                return Unauthorized(result);
+            }
+            return Ok(new { Message = result.Message });
         }
 
         /// <summary>

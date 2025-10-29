@@ -27,6 +27,27 @@ public partial class Payment
 
     public DateTime? PaidAt { get; set; }
 
+    // Sepay integration fields
+    public string PaymentGateway { get; set; }
+
+    public string GatewayOrderCode { get; set; }
+
+    public string QrContent { get; set; }
+
+    public string QrImageUrl { get; set; }
+
+    public DateTime? ExpiresAt { get; set; }
+
+    public string WebhookSignature { get; set; }
+
+    public DateTime? WebhookReceivedAt { get; set; }
+
+    public string GatewayRawPayload { get; set; }
+
+    public string ErrorCode { get; set; }
+
+    public string ErrorMessage { get; set; }
+
     public virtual Adoption Adoption { get; set; }
 
     public virtual Order Order { get; set; }
