@@ -7,6 +7,7 @@ using GrowMate.Repositories.Interfaces;
 using GrowMate.Repositories.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using System.Text.RegularExpressions;
 
 namespace GrowMate.Services.Payments
 {
@@ -146,15 +147,15 @@ namespace GrowMate.Services.Payments
                 var description = root.TryGetProperty("description", out var descProp) ? descProp.GetString() : root.TryGetProperty("content", out var cProp) ? cProp.GetString() : string.Empty;
                 var transactionRef = root.TryGetProperty("transaction_code", out var trProp) ? trProp.GetString() : root.TryGetProperty("transId", out var tr2) ? tr2.GetString() : null;
 
-                // find by gateway_order_code from description
+                // find by gateway_order_code from description/content
+                // Accept formats: "GROWMATE-<code>", "GROWMATE <code>", or "GROWMATE<code>"
                 string? gatewayOrderCode = null;
                 if (!string.IsNullOrEmpty(description))
                 {
-                    var marker = "GROWMATE-";
-                    var idx = description.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
-                    if (idx >= 0)
+                    var match = Regex.Match(description, @"GROWMATE[-:\s]?([A-Za-z0-9\-_]+)", RegexOptions.IgnoreCase);
+                    if (match.Success)
                     {
-                        gatewayOrderCode = description.Substring(idx + marker.Length).Trim();
+                        gatewayOrderCode = match.Groups[1].Value;
                     }
                 }
 

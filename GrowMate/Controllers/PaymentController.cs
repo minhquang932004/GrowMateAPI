@@ -52,7 +52,13 @@ namespace GrowMate.Controllers
             var result = await _paymentService.ProcessSepayWebhookAsync(auth, body, HttpContext.RequestAborted);
             if (!result.Success)
             {
-                return Unauthorized(result);
+                // Nếu sai chứng thực -> trả 401 để từ chối
+                if (string.Equals(result.Message, "Chứng thực webhook không hợp lệ.", StringComparison.Ordinal))
+                {
+                    return Unauthorized(result);
+                }
+                // Các lỗi nghiệp vụ khác: trả 200 để Sepay không retry liên tục
+                return Ok(result);
             }
             return Ok(new { Message = result.Message });
         }
