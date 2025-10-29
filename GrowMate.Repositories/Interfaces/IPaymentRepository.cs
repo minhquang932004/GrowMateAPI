@@ -16,5 +16,7 @@ namespace GrowMate.Repositories.Interfaces
         void Remove(Payment payment);
         Task<bool> ExistsAsync(int paymentId, CancellationToken ct = default);
         Task<bool> ExistsByTransactionReferenceAsync(string transactionReference, CancellationToken ct = default);
+        Task<Payment?> GetByGatewayOrderCodeAsync(string gatewayOrderCode, CancellationToken ct = default);
+        Task<Payment?> GetByTransactionReferenceAsync(string transactionReference, CancellationToken ct = default);
     }
 }

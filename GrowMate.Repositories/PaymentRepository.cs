@@ -128,5 +128,17 @@ namespace GrowMate.Repositories
         {
             return await _db.Payments.AnyAsync(p => p.TransactionReference == transactionReference, ct);
         }
+
+        public async Task<Payment?> GetByGatewayOrderCodeAsync(string gatewayOrderCode, CancellationToken ct = default)
+        {
+            return await _db.Payments
+                .FirstOrDefaultAsync(p => p.GatewayOrderCode == gatewayOrderCode, ct);
+        }
+
+        public async Task<Payment?> GetByTransactionReferenceAsync(string transactionReference, CancellationToken ct = default)
+        {
+            return await _db.Payments
+                .FirstOrDefaultAsync(p => p.TransactionReference == transactionReference, ct);
+        }
     }
 }

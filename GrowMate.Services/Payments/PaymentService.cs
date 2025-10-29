@@ -6,6 +6,7 @@ using GrowMate.Contracts.Responses.Auth;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Repositories.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 
 namespace GrowMate.Services.Payments
 {
@@ -21,23 +22,166 @@ namespace GrowMate.Services.Payments
         Task<AuthResponse> UpdatePaymentAsync(int paymentId, UpdatePaymentRequest request, CancellationToken ct = default);
         Task<AuthResponse> UpdatePaymentStatusAsync(int paymentId, UpdatePaymentStatusRequest request, CancellationToken ct = default);
         Task<AuthResponse> DeletePaymentAsync(int paymentId, CancellationToken ct = default);
+        Task<PaymentQrResponse> CreateSepayQrAsync(int orderId, int? expiresMinutes = 15, CancellationToken ct = default);
+        Task<AuthResponse> ProcessSepayWebhookAsync(string authorizationHeader, string payloadJson, CancellationToken ct = default);
     }
 
     public class PaymentService : IPaymentService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<PaymentService> _logger;
+        private readonly IConfiguration _configuration;
 
-        public PaymentService(IUnitOfWork unitOfWork, ILogger<PaymentService> logger)
+        public PaymentService(IUnitOfWork unitOfWork, ILogger<PaymentService> logger, IConfiguration configuration)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
+            _configuration = configuration;
         }
 
         public async Task<PageResult<PaymentResponse>> GetByOrderIdAsync(int orderId, int page, int pageSize, CancellationToken ct = default)
         {
             var payments = await _unitOfWork.Payments.GetByOrderIdAsync(orderId, page, pageSize, ct);
             return await MapPaymentsToResponseAsync(payments, ct);
+        }
+
+        public async Task<PaymentQrResponse> CreateSepayQrAsync(int orderId, int? expiresMinutes = 15, CancellationToken ct = default)
+        {
+            // Load order
+            var order = await _unitOfWork.Orders.GetByIdAsync(orderId);
+            if (order == null)
+            {
+                throw new InvalidOperationException($"Không tìm thấy orderId: {orderId}");
+            }
+
+            // Build QR using VietQR style (no external call needed)
+            var bankCode = _configuration["Sepay:BankCode"];
+            var accountNumber = _configuration["Sepay:AccountNumber"];
+            if (string.IsNullOrWhiteSpace(bankCode) || string.IsNullOrWhiteSpace(accountNumber))
+            {
+                throw new InvalidOperationException("Thiếu cấu hình Sepay:BankCode hoặc Sepay:AccountNumber");
+            }
+
+            // Fixed transfer amount for QR (VND)
+            var amount = 5000m;
+            var gatewayOrderCode = $"ORD{orderId}-{Guid.NewGuid().ToString("N").Substring(0, 8)}";
+            var addInfo = $"GROWMATE-{gatewayOrderCode}";
+            var expiresAt = DateTime.Now.AddMinutes(expiresMinutes ?? 15);
+
+            // Sepay QR (theo tài liệu: https://qr.sepay.vn/img?acc=SO_TAI_KHOAN&bank=NGAN_HANG&amount=SO_TIEN&des=NOI_DUNG)
+            var vndInt = (long)Math.Round(amount, 0, MidpointRounding.AwayFromZero);
+            var qrImageUrl = $"https://qr.sepay.vn/img?acc={Uri.EscapeDataString(accountNumber)}&bank={Uri.EscapeDataString(bankCode)}&amount={vndInt}&des={Uri.EscapeDataString(addInfo)}";
+
+            // Save PENDING payment snapshot
+            var payment = new Models.Payment
+            {
+                OrderId = orderId,
+                Amount = amount,
+                PaymentMethod = "SEPAY",
+                Status = "PENDING",
+                SourceType = "WEB",
+                CreatedAt = DateTime.Now,
+                PaymentGateway = "SEPAY",
+                GatewayOrderCode = gatewayOrderCode,
+                QrContent = addInfo,
+                QrImageUrl = qrImageUrl,
+                ExpiresAt = expiresAt
+            };
+
+            await _unitOfWork.Payments.AddAsync(payment, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return new PaymentQrResponse
+            {
+                PaymentId = payment.PaymentId,
+                OrderId = orderId,
+                GatewayOrderCode = gatewayOrderCode,
+                QrContent = addInfo,
+                QrImageUrl = qrImageUrl,
+                ExpiresAt = expiresAt,
+                TransactionReference = null,
+                Status = payment.Status
+            };
+        }
+
+        public async Task<AuthResponse> ProcessSepayWebhookAsync(string authorizationHeader, string payloadJson, CancellationToken ct = default)
+        {
+            try
+            {
+                var expected = _configuration["Sepay:WebhookToken"];
+                if (!string.IsNullOrEmpty(expected))
+                {
+                    var expectedHeader = $"Apikey {expected}";
+                    if (!string.Equals(authorizationHeader, expectedHeader, StringComparison.Ordinal))
+                    {
+                        return new AuthResponse { Success = false, Message = "Chứng thực webhook không hợp lệ." };
+                    }
+                }
+
+                using var doc = System.Text.Json.JsonDocument.Parse(payloadJson);
+                var root = doc.RootElement;
+                // best-effort parse
+                var amount = root.TryGetProperty("amount", out var amountProp) ? amountProp.GetDecimal() : 0m;
+                var description = root.TryGetProperty("description", out var descProp) ? descProp.GetString() : root.TryGetProperty("content", out var cProp) ? cProp.GetString() : string.Empty;
+                var transactionRef = root.TryGetProperty("transaction_code", out var trProp) ? trProp.GetString() : root.TryGetProperty("transId", out var tr2) ? tr2.GetString() : null;
+
+                // find by gateway_order_code from description
+                string? gatewayOrderCode = null;
+                if (!string.IsNullOrEmpty(description))
+                {
+                    var marker = "GROWMATE-";
+                    var idx = description.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+                    if (idx >= 0)
+                    {
+                        gatewayOrderCode = description.Substring(idx + marker.Length).Trim();
+                    }
+                }
+
+                Models.Payment? payment = null;
+                if (!string.IsNullOrEmpty(gatewayOrderCode))
+                {
+                    payment = await _unitOfWork.Payments.GetByGatewayOrderCodeAsync(gatewayOrderCode, ct);
+                }
+                if (payment == null && !string.IsNullOrEmpty(transactionRef))
+                {
+                    payment = await _unitOfWork.Payments.GetByTransactionReferenceAsync(transactionRef, ct);
+                }
+                if (payment == null)
+                {
+                    return new AuthResponse { Success = false, Message = "Không tìm thấy payment tương ứng." };
+                }
+
+                if (string.Equals(payment.Status, "SUCCESS", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new AuthResponse { Success = true, Message = "Đã xử lý trước đó." };
+                }
+
+                await _unitOfWork.ExecuteInTransactionAsync(async innerCt =>
+                {
+                    payment.Status = "SUCCESS";
+                    payment.PaidAt = DateTime.Now;
+                    if (!string.IsNullOrEmpty(transactionRef)) payment.TransactionReference = transactionRef;
+                    payment.WebhookReceivedAt = DateTime.Now;
+                    payment.GatewayRawPayload = payloadJson;
+
+                    _unitOfWork.Payments.Update(payment);
+                    await _unitOfWork.SaveChangesAsync(innerCt);
+
+                    // Load order with items if needed
+                    var order = await _unitOfWork.Orders.GetByIdAsync(payment.OrderId ?? 0);
+                    if (order != null)
+                    {
+                        await CreateAdoptionsAndTreesFromOrderAsync(order, innerCt);
+                    }
+                }, ct);
+
+                return new AuthResponse { Success = true, Message = "Ghi nhận thanh toán thành công." };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ProcessSepayWebhookAsync error");
+                return new AuthResponse { Success = false, Message = "Xử lý webhook thất bại: " + ex.Message };
+            }
         }
 
         public async Task<PageResult<PaymentResponse>> GetByCustomerIdAsync(int customerId, int page, int pageSize, CancellationToken ct = default)

@@ -10,7 +10,8 @@
     <ProjectReference Include="..\GrowMate.Contracts\GrowMate.Contracts.csproj" />
     <ProjectReference Include="..\GrowMate.Repositories\GrowMate.Repositories.csproj" />
 	<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
-	<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.9" />
+	<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
+    <!-- Gỡ tham chiếu phiên bản cố định để tránh NU1605 (downgrade). Dự án sẽ dùng version transitive tương thích từ EF Core. -->
   </ItemGroup>
 
 </Project>

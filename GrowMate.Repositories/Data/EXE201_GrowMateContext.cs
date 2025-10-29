@@ -582,6 +582,10 @@ public partial class EXE201_GrowMateContext : DbContext
                 .IsUnique()
                 .HasFilter("([transaction_reference] IS NOT NULL)");
 
+            entity.HasIndex(e => e.GatewayOrderCode, "IX_payments_gateway_order_code")
+                .IsUnique()
+                .HasFilter("([gateway_order_code] IS NOT NULL)");
+
             entity.Property(e => e.PaymentId).HasColumnName("payment_id");
             entity.Property(e => e.AdoptionId).HasColumnName("adoption_id");
             entity.Property(e => e.Amount)
@@ -609,6 +613,36 @@ public partial class EXE201_GrowMateContext : DbContext
             entity.Property(e => e.TransactionReference)
                 .HasMaxLength(255)
                 .HasColumnName("transaction_reference");
+
+            // Sepay integration columns
+            entity.Property(e => e.PaymentGateway)
+                .HasMaxLength(50)
+                .HasDefaultValue("SEPAY")
+                .HasColumnName("payment_gateway");
+            entity.Property(e => e.GatewayOrderCode)
+                .HasMaxLength(100)
+                .HasColumnName("gateway_order_code");
+            entity.Property(e => e.QrContent)
+                .HasColumnName("qr_content");
+            entity.Property(e => e.QrImageUrl)
+                .HasColumnName("qr_image_url");
+            entity.Property(e => e.ExpiresAt)
+                .HasColumnType("datetime")
+                .HasColumnName("expires_at");
+            entity.Property(e => e.WebhookSignature)
+                .HasMaxLength(255)
+                .HasColumnName("webhook_signature");
+            entity.Property(e => e.WebhookReceivedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("webhook_received_at");
+            entity.Property(e => e.GatewayRawPayload)
+                .HasColumnName("gateway_raw_payload");
+            entity.Property(e => e.ErrorCode)
+                .HasMaxLength(50)
+                .HasColumnName("error_code");
+            entity.Property(e => e.ErrorMessage)
+                .HasMaxLength(500)
+                .HasColumnName("error_message");
 
             entity.HasOne(d => d.Adoption).WithMany(p => p.Payments)
                 .HasForeignKey(d => d.AdoptionId)
