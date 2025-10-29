@@ -55,12 +55,13 @@ namespace GrowMate.Controllers
                 // Nếu sai chứng thực -> trả 401 để từ chối
                 if (string.Equals(result.Message, "Chứng thực webhook không hợp lệ.", StringComparison.Ordinal))
                 {
-                    return Unauthorized(result);
+                    return Unauthorized(new { success = false, message = result.Message });
                 }
-                // Các lỗi nghiệp vụ khác: trả 200 để Sepay không retry liên tục
-                return Ok(result);
+                // Các lỗi nghiệp vụ khác: trả 200 với success=false để Sepay không retry liên tục
+                return Ok(new { success = false, message = result.Message });
             }
-            return Ok(new { Message = result.Message });
+            // Sepay yêu cầu response có success: true và HTTP 200/201
+            return Ok(new { success = true, message = result.Message });
         }
 
         /// <summary>
