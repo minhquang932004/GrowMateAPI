@@ -143,19 +143,39 @@ namespace GrowMate.Services.Payments
                 using var doc = System.Text.Json.JsonDocument.Parse(payloadJson);
                 var root = doc.RootElement;
                 // best-effort parse
-                var amount = root.TryGetProperty("amount", out var amountProp) ? amountProp.GetDecimal() : 0m;
+                var sepayId = root.TryGetProperty("id", out var idProp) ? idProp.GetInt32() : (int?)null;
+                var amount = root.TryGetProperty("amount", out var amountProp) ? amountProp.GetDecimal() : root.TryGetProperty("transferAmount", out var taProp) ? taProp.GetDecimal() : 0m;
                 var description = root.TryGetProperty("description", out var descProp) ? descProp.GetString() : root.TryGetProperty("content", out var cProp) ? cProp.GetString() : string.Empty;
-                var transactionRef = root.TryGetProperty("transaction_code", out var trProp) ? trProp.GetString() : root.TryGetProperty("transId", out var tr2) ? tr2.GetString() : null;
+                var transactionRef = root.TryGetProperty("transaction_code", out var trProp) ? trProp.GetString() : root.TryGetProperty("transId", out var tr2) ? tr2.GetString() : root.TryGetProperty("referenceCode", out var refProp) ? refProp.GetString() : null;
+
+                _logger.LogInformation("Sepay webhook received - SepayId: {SepayId}, Description: {Description}, TransactionRef: {TransactionRef}, Amount: {Amount}", 
+                    sepayId, description, transactionRef, amount);
 
                 // find by gateway_order_code from description/content
-                // Accept formats: "GROWMATE-<code>", "GROWMATE <code>", or "GROWMATE<code>"
+                // Accept formats: "GROWMATE-ORD16-abc123", "GROWMATE ORD16-abc123", "GROWMATEORD16abc123"
+                // Sepay sometimes sends without dash, so we extract the GUID part and search
                 string? gatewayOrderCode = null;
+                string? guidPart = null;
                 if (!string.IsNullOrEmpty(description))
                 {
-                    var match = Regex.Match(description, @"GROWMATE[-:\s]?([A-Za-z0-9\-_]+)", RegexOptions.IgnoreCase);
-                    if (match.Success)
+                    // Try full match first: "GROWMATE-ORD16-abc123" or "GROWMATEORD16-abc123"
+                    var fullMatch = Regex.Match(description, @"GROWMATE[-:\s]?(ORD\d+[-_]?)([A-Za-z0-9]{8,})", RegexOptions.IgnoreCase);
+                    if (fullMatch.Success)
                     {
-                        gatewayOrderCode = match.Groups[1].Value;
+                        var orderPart = fullMatch.Groups[1].Value.Replace("-", "").Replace("_", "");
+                        var guidPortion = fullMatch.Groups[2].Value;
+                        // Reconstruct: "ORD16-abc12345"
+                        gatewayOrderCode = $"{orderPart}-{guidPortion.Substring(0, Math.Min(8, guidPortion.Length))}";
+                        guidPart = guidPortion.Substring(0, Math.Min(8, guidPortion.Length));
+                    }
+                    else
+                    {
+                        // Fallback: extract just the GUID part (8 chars after ORD)
+                        var guidMatch = Regex.Match(description, @"ORD\d+([A-Za-z0-9]{8})", RegexOptions.IgnoreCase);
+                        if (guidMatch.Success)
+                        {
+                            guidPart = guidMatch.Groups[1].Value;
+                        }
                     }
                 }
 
@@ -164,14 +184,36 @@ namespace GrowMate.Services.Payments
                 {
                     payment = await _unitOfWork.Payments.GetByGatewayOrderCodeAsync(gatewayOrderCode, ct);
                 }
+                // If still not found, try searching by GUID suffix (flexible matching)
+                if (payment == null && !string.IsNullOrEmpty(guidPart))
+                {
+                    _logger.LogInformation("Trying flexible search for payment with GUID suffix: {GuidPart}", guidPart);
+                    // Get all pending SEPAY payments and check suffix
+                    var allPending = await _unitOfWork.Payments.GetAllAsync(1, 100, ct);
+                    payment = allPending.Items.FirstOrDefault(p => 
+                        string.Equals(p.Status, "PENDING", StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(p.PaymentGateway, "SEPAY", StringComparison.OrdinalIgnoreCase) &&
+                        !string.IsNullOrEmpty(p.GatewayOrderCode) &&
+                        p.GatewayOrderCode.EndsWith(guidPart, StringComparison.OrdinalIgnoreCase));
+                }
                 if (payment == null && !string.IsNullOrEmpty(transactionRef))
                 {
                     payment = await _unitOfWork.Payments.GetByTransactionReferenceAsync(transactionRef, ct);
                 }
+                // Sepay khuyến nghị: Kiểm tra idempotency dựa trên trường "id" của Sepay
+                if (payment == null && sepayId.HasValue)
+                {
+                    var sepayIdStr = $"SEPAY-{sepayId.Value}";
+                    payment = await _unitOfWork.Payments.GetByTransactionReferenceAsync(sepayIdStr, ct);
+                }
                 if (payment == null)
                 {
+                    _logger.LogWarning("Payment not found - GatewayOrderCode: {GatewayOrderCode}, GuidPart: {GuidPart}, TransactionRef: {TransactionRef}, SepayId: {SepayId}", 
+                        gatewayOrderCode, guidPart, transactionRef, sepayId);
                     return new AuthResponse { Success = false, Message = "Không tìm thấy payment tương ứng." };
                 }
+
+                _logger.LogInformation("Found payment {PaymentId} with GatewayOrderCode: {GatewayOrderCode}", payment.PaymentId, payment.GatewayOrderCode);
 
                 if (string.Equals(payment.Status, "SUCCESS", StringComparison.OrdinalIgnoreCase))
                 {
@@ -182,7 +224,20 @@ namespace GrowMate.Services.Payments
                 {
                     payment.Status = "SUCCESS";
                     payment.PaidAt = DateTime.Now;
-                    if (!string.IsNullOrEmpty(transactionRef)) payment.TransactionReference = transactionRef;
+                    // Lưu Sepay transaction reference để idempotency (theo khuyến nghị của Sepay)
+                    if (!string.IsNullOrEmpty(transactionRef))
+                    {
+                        payment.TransactionReference = transactionRef;
+                    }
+                    else if (sepayId.HasValue)
+                    {
+                        // Fallback: lưu Sepay id nếu không có transactionRef
+                        var sepayIdStr = $"SEPAY-{sepayId.Value}";
+                        if (string.IsNullOrEmpty(payment.TransactionReference))
+                        {
+                            payment.TransactionReference = sepayIdStr;
+                        }
+                    }
                     payment.WebhookReceivedAt = DateTime.Now;
                     payment.GatewayRawPayload = payloadJson;
 
