@@ -32,7 +32,8 @@ namespace GrowMate.Controllers
                 return BadRequest(new { Message = "Dữ liệu request không hợp lệ." });
             }
 
-            var qr = await _paymentService.CreateSepayQrAsync(request.OrderId, request.ExpiresMinutes, HttpContext.RequestAborted);
+            // Chỉ cần orderId; thời gian hết hạn mặc định 10 phút ở service
+            var qr = await _paymentService.CreateSepayQrAsync(request.OrderId, ct: HttpContext.RequestAborted);
             return Ok(qr);
         }
 
