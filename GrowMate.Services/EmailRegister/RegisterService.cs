@@ -208,7 +208,7 @@ namespace GrowMate.Services.EmailRegister
   '>
     <h2 style='margin-top: 0; font-size: 22px; color: #bbf7d0;'>Xác thực đăng nhập</h2>
     <p style='font-size: 15px; margin-bottom: 24px;'>
-      Xin chào {{System.Net.WebUtility.HtmlEncode(user.FullName)}},<br/>
+      Xin chào {System.Net.WebUtility.HtmlEncode(user.FullName)},<br/>
       Mã OTP để xác thực tài khoản GrowMate của bạn là:
     </p>
     <div style='
@@ -233,7 +233,7 @@ namespace GrowMate.Services.EmailRegister
         transition: opacity 0.5s;
         animation: spin 2s linear infinite;
       '></div>
-      {{code}}
+      {code}
     </div>
     <p style='margin-top: 24px; font-size: 14px; color: #9ca3af;'>
       Mã này có hiệu lực trong 10 phút.
