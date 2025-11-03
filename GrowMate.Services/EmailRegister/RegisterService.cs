@@ -181,9 +181,76 @@ namespace GrowMate.Services.EmailRegister
             // Send email
             var subject = "GrowMate - Verify your email";
             var body = $@"
-                <p>Hello {System.Net.WebUtility.HtmlEncode(user.FullName)},</p>
-                <p>Your verification code is: <strong>{code}</strong></p>
-                <p>This code will expire in 10 minutes.</p>";
+                <!DOCTYPE html>
+<html lang='vi'>
+<head>
+  <meta charset='UTF-8' />
+  <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+  <title>Xác thực GrowMate</title>
+</head>
+<body style='
+  font-family: Arial, sans-serif;
+  background-color: #0b0f0d;
+  color: #f3f3f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+'>
+  <div style='
+    background-color: #111814;
+    border-radius: 16px;
+    padding: 32px 48px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(34,197,94,0.15);
+    max-width: 480px;
+  '>
+    <h2 style='margin-top: 0; font-size: 22px; color: #bbf7d0;'>Xác thực đăng nhập</h2>
+    <p style='font-size: 15px; margin-bottom: 24px;'>
+      Xin chào {{System.Net.WebUtility.HtmlEncode(user.FullName)}},<br/>
+      Mã OTP để xác thực tài khoản GrowMate của bạn là:
+    </p>
+    <div style='
+      display: inline-block;
+      padding: 16px 32px;
+      font-size: 28px;
+      letter-spacing: 4px;
+      font-weight: bold;
+      color: #16a34a;
+      background-color: #022c22;
+      border: 2px solid rgba(134,239,172,0.3);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    '>
+      <div style='
+        position: absolute;
+        inset: -4px;
+        border: 2px solid rgba(134,239,172,0.3);
+        border-radius: 9999px;
+        opacity: 0;
+        transition: opacity 0.5s;
+        animation: spin 2s linear infinite;
+      '></div>
+      {{code}}
+    </div>
+    <p style='margin-top: 24px; font-size: 14px; color: #9ca3af;'>
+      Mã này có hiệu lực trong 10 phút.
+    </p>
+    <p style='margin-top: 24px; font-size: 13px; color: #6b7280;'>
+      © GrowMate Team. All rights reserved.
+    </p>
+  </div>
+  <style>
+    @keyframes spin {{
+      0% {{ transform: rotate(0deg); opacity: 0; }}
+      50% {{ opacity: 1; }}
+      100% {{ transform: rotate(360deg); opacity: 0; }}
+    }}
+  </style>
+</body>
+</html>";
 
             await _emailService.SendEmailAsync(user.Email, subject, body);
 
