@@ -130,7 +130,7 @@ namespace GrowMateWebAPIs.Controllers
                 var picture = result.Principal.FindFirstValue("pictures");
 
                 var user = await _loginService.LoginWithGoogle(email, name, ct);
-                var redirectUrl = $"http://localhost:5173?Token={user.Token}";// hardcode FE, will change later
+                var redirectUrl = $"https://www.growmate.site?Token={user.Token}";// hardcode FE, will change later
 
                 Response.Cookies.Append("Token", user.Token, new CookieOptions
                 {
