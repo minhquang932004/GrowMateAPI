@@ -154,7 +154,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
-        builder => builder.WithOrigins("http://localhost:5173")
+        builder => builder.WithOrigins("http://localhost:5173", "https://www.growmate.site/", "https://growmate-xdig.vercel.app/")
                           .AllowAnyMethod()
                           .AllowCredentials()
                           .AllowAnyHeader());
