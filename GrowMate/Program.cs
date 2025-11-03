@@ -1,6 +1,7 @@
 using GrowMate.Repositories;
 using GrowMate.Repositories.Data;
 using GrowMate.Repositories.Interfaces;
+using GrowMate.Services.Adoptions;
 using GrowMate.Services.Authentication;
 using GrowMate.Services.Carts;
 using GrowMate.Services.Customers;
@@ -8,19 +9,20 @@ using GrowMate.Services.EmailRegister;
 using GrowMate.Services.Farmers;
 using GrowMate.Services.Media;
 using GrowMate.Services.Orders;
+using GrowMate.Services.Payments;
 using GrowMate.Services.Posts;
 using GrowMate.Services.Products;
 using GrowMate.Services.TreeListings;
 using GrowMate.Services.Trees;
-using GrowMate.Services.Adoptions;
-using GrowMate.Services.Payments;
 using GrowMate.Services.Users;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -115,6 +117,16 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
         options.ClientSecret = googleClientSecret;
         options.CallbackPath = "/api/auth/google-callback"; // align with your controller route if enabled
         options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
+        //Thêm 2 scope này
+        options.Scope.Add("email");
+        options.Scope.Add("profile");
+
+        // Đảm bảo lấy đúng các claim
+        options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "sub");
+        options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
+        options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
+        options.ClaimActions.MapJsonKey("picture", "picture");
     });
 }
 
