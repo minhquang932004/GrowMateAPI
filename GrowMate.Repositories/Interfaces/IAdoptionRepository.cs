@@ -8,6 +8,7 @@ namespace GrowMate.Repositories.Interfaces
         Task<PageResult<Adoption>> GetByCustomerIdAsync(int customerId, int page, int pageSize, CancellationToken ct = default);
         Task<PageResult<Adoption>> GetByFarmerIdAsync(int farmerId, int page, int pageSize, CancellationToken ct = default);
         Task<PageResult<Adoption>> GetByOrderIdAsync(int orderId, int page, int pageSize, CancellationToken ct = default);
+        Task<PageResult<Adoption>> GetByPostIdAsync(int postId, int page, int pageSize, CancellationToken ct = default);
         Task<PageResult<Adoption>> GetAllAsync(int page, int pageSize, CancellationToken ct = default);
         Task<Adoption?> GetByIdAsync(int adoptionId, CancellationToken ct = default);
         Task<Adoption?> GetByIdWithDetailsAsync(int adoptionId, CancellationToken ct = default);

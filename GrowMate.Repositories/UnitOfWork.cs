@@ -24,7 +24,8 @@ namespace GrowMate.Repositories
         ICartItemRepository cartItems,
         IAdoptionRepository adoptions,
         ITreeRepository trees,
-        IPaymentRepository payments
+        IPaymentRepository payments,
+        IMonthlyReportRepository monthlyReports
         )
         {
             _dbContext = dbContext;
@@ -42,6 +43,7 @@ namespace GrowMate.Repositories
             Adoptions = adoptions;
             Trees = trees;
             Payments = payments;
+            MonthlyReports = monthlyReports;
         }
 
         public IUserRepository Users { get; }
@@ -58,6 +60,7 @@ namespace GrowMate.Repositories
         public IAdoptionRepository Adoptions { get; }
         public ITreeRepository Trees { get; }
         public IPaymentRepository Payments { get; }
+        public IMonthlyReportRepository MonthlyReports { get; }
 
         public Task<int> SaveChangesAsync(CancellationToken ct = default)
             => _dbContext.SaveChangesAsync(ct);

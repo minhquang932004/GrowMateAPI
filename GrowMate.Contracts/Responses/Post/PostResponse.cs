@@ -107,5 +107,10 @@ namespace GrowMate.Contracts.Responses.Post
         /// Mã post (post_code) sinh tự động từ productName
         /// </summary>
         public string PostCode { get; set; }
+
+        /// <summary>
+        /// Tree listing associated with this post (if available) - simplified version without redundant fields
+        /// </summary>
+        public TreeListingSummaryResponse? TreeListing { get; set; }
     }
 }

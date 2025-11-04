@@ -10,7 +10,7 @@ namespace GrowMate.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    [Authorize(Roles = "Customer,Farmer,Admin")]
     public class AdoptionController : ControllerBase
     {
         private readonly IAdoptionService _adoptionService;
@@ -42,12 +42,13 @@ namespace GrowMate.Controllers
         /// <summary>
         /// Get adoptions with optional filters (paged)
         /// </summary>
-        /// <remarks>Role: Authenticated User</remarks>
+        /// <remarks>Role: Customer, Farmer, Admin</remarks>
         [HttpGet]
         public async Task<IActionResult> GetAdoptions(
             [FromQuery] int? customerId = null,
             [FromQuery] int? farmerId = null,
             [FromQuery] int? orderId = null,
+            [FromQuery] int? postId = null,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10)
         {
@@ -56,6 +57,10 @@ namespace GrowMate.Controllers
             if (orderId.HasValue)
             {
                 adoptions = await _adoptionService.GetByOrderIdAsync(orderId.Value, page, pageSize, HttpContext.RequestAborted);
+            }
+            else if (postId.HasValue)
+            {
+                adoptions = await _adoptionService.GetAdoptionByPostIdAsync(postId.Value, page, pageSize, HttpContext.RequestAborted);
             }
             else if (customerId.HasValue)
             {
@@ -98,7 +103,7 @@ namespace GrowMate.Controllers
         /// <summary>
         /// Get specific adoption details
         /// </summary>
-        /// <remarks>Role: Authenticated User</remarks>
+        /// <remarks>Role: Customer, Farmer, Admin</remarks>
         [HttpGet("{adoptionId}")]
         public async Task<IActionResult> GetAdoptionById(int adoptionId)
         {
@@ -114,7 +119,7 @@ namespace GrowMate.Controllers
         /// <summary>
         /// Get adoption detail with reports and payments
         /// </summary>
-        /// <remarks>Role: Authenticated User</remarks>
+        /// <remarks>Role: Customer, Farmer, Admin</remarks>
         [HttpGet("{adoptionId}/detail")]
         public async Task<IActionResult> GetAdoptionDetail(int adoptionId)
         {
@@ -130,7 +135,7 @@ namespace GrowMate.Controllers
         /// <summary>
         /// Create new adoption
         /// </summary>
-        /// <remarks>Role: Authenticated User</remarks>
+        /// <remarks>Role: Customer, Farmer, Admin</remarks>
         [HttpPost]
         public async Task<IActionResult> CreateAdoption([FromBody] CreateAdoptionRequest request)
         {
@@ -153,7 +158,7 @@ namespace GrowMate.Controllers
         /// <summary>
         /// Update adoption
         /// </summary>
-        /// <remarks>Role: Authenticated User</remarks>
+        /// <remarks>Role: Customer, Farmer, Admin</remarks>
         [HttpPut("{adoptionId}")]
         public async Task<IActionResult> UpdateAdoption(int adoptionId, [FromBody] UpdateAdoptionRequest request)
         {
@@ -176,7 +181,7 @@ namespace GrowMate.Controllers
         /// <summary>
         /// Update adoption status
         /// </summary>
-        /// <remarks>Role: Authenticated User</remarks>
+        /// <remarks>Role: Customer, Farmer, Admin</remarks>
         [HttpPut("{adoptionId}/status")]
         public async Task<IActionResult> UpdateAdoptionStatus(int adoptionId, [FromBody] UpdateAdoptionStatusRequest request)
         {
@@ -199,7 +204,7 @@ namespace GrowMate.Controllers
         /// <summary>
         /// Delete adoption (soft delete)
         /// </summary>
-        /// <remarks>Role: Authenticated User</remarks>
+        /// <remarks>Role: Customer, Farmer, Admin</remarks>
         [HttpDelete("{adoptionId}")]
         public async Task<IActionResult> DeleteAdoption(int adoptionId)
         {

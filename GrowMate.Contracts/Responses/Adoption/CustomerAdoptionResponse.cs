@@ -24,5 +24,6 @@ namespace GrowMate.Contracts.Responses.Adoption
         public int Years { get; set; }
         public decimal TotalPrice { get; set; }
         public string PostCode { get; set; }
+        public int PostId { get; set; }
     }
 }
