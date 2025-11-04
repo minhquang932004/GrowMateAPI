@@ -148,7 +148,7 @@ namespace GrowMateWebAPIs.Controllers
                     return BadRequest(user?.Message ?? "Đăng nhập Google thất bại");
                 }
 
-                var redirectUrl = $"https://www.growmate.site?Token={user.Token}"; // FE domain
+                var redirectUrl = $"https://www.growmate.site/googleCallback?token={Uri.EscapeDataString(user.Token)}";
 
                 Response.Cookies.Append("Token", user.Token, new CookieOptions
                 {
