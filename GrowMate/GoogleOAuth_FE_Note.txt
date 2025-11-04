@@ -1,0 +1,83 @@
+Hướng dẫn tích hợp “Token Catcher” cho FE (React + react-router)
+================================================================
+
+Mục tiêu
+- Sau khi Google → API xử lý xong, Backend sẽ redirect về FE kèm `?Token=...`.
+- FE cần “bắt” Token, lưu lại, xoá query và điều hướng vào app.
+
+1) Nút Login (redirect toàn trang)
+- Mở flow OAuth bằng điều hướng top-level (không dùng fetch/XHR):
+  `window.location.href = `${API_BASE_URL}/auth/login-google``;
+  // API_BASE_URL đã gồm /api, ví dụ: https://growmate.azurewebsites.net/api
+
+2) Tạo component Token Catcher (FE)
+- Tạo file `src/router/QueryTokenCatcher.tsx` và render sớm trong AppRouter/App.tsx.
+- Nhiệm vụ:
+  - Đọc query param Token (chấp nhận cả `Token` và `token`)
+  - Lưu token vào localStorage và set vào axios
+  - Xoá query khỏi URL
+  - Điều hướng vào trang chủ (hoặc trang bạn muốn)
+
+Ví dụ (TypeScript/React):
+  import { useEffect } from "react";
+  import { useLocation, useNavigate } from "react-router-dom";
+  import { setAuthToken } from "../services/axiosClient";
+
+  export default function QueryTokenCatcher() {
+    const { search } = useLocation();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+      const params = new URLSearchParams(search);
+      const token = params.get("Token") || params.get("token");
+      if (!token) return;
+
+      setAuthToken(token);
+      localStorage.setItem("auth_token", token);
+
+      const url = new URL(window.location.href);
+      url.searchParams.delete("Token");
+      url.searchParams.delete("token");
+      window.history.replaceState({}, "", url.pathname);
+
+      navigate("/", { replace: true });
+    }, [search, navigate]);
+
+    return null; // không render gì
+  }
+
+3) Gắn Token Catcher toàn cục
+- Trong AppRouter/App.tsx, render `<QueryTokenCatcher />` trước phần Routes để luôn chạy.
+
+4) Cấu hình axios client
+- Đảm bảo axios tự đính kèm Bearer token cho mọi request sau đó.
+
+  export const API_BASE_URL = "https://growmate.azurewebsites.net/api";
+
+  let authToken = localStorage.getItem("auth_token") || undefined;
+
+  export const setAuthToken = (token) => {
+    authToken = token;
+    if (token) localStorage.setItem("auth_token", token);
+    else localStorage.removeItem("auth_token");
+  };
+
+  const client = axios.create({ baseURL: API_BASE_URL });
+  client.interceptors.request.use((config) => {
+    if (authToken) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${authToken}`;
+    }
+    return config;
+  });
+
+5) Thiết lập trên Google Cloud
+- Authorized redirect URIs cần có:
+  https://growmate.azurewebsites.net/api/auth/google-callback
+- Nếu sau này chuyển sang callback mặc định của middleware, thêm:
+  https://growmate.azurewebsites.net/signin-google
+
+6) Ghi chú
+- Domain FE phải khớp domain đích mà Backend redirect (hiện tại: https://www.growmate.site?Token=...). Nếu test trên domain khác, cần cập nhật lại redirect của Backend.
+- Không gọi trực tiếp `/api/auth/google-callback` từ FE; luôn khởi tạo từ `/api/auth/login-google`.
+

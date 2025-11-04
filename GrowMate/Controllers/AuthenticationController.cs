@@ -105,7 +105,10 @@ namespace GrowMateWebAPIs.Controllers
         [HttpGet("login-google")]
         public IActionResult LoginWithGoogle()
         {
-            var redirectUrl = Url.Action("GoogleCallback", "Authentication");
+            // Use absolute callback URL to avoid scheme/host mismatches behind proxies
+            var scheme = Request.Scheme;
+            var host = Request.Host;
+            var redirectUrl = $"{scheme}://{host}/api/auth/google-callback";
             var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
             return Challenge(properties, GoogleDefaults.AuthenticationScheme);
         }

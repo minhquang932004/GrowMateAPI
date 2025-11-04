@@ -202,12 +202,22 @@ app.UseSwaggerUI();
 
 
 // Ensure correct scheme/host behind Azure's reverse proxy for external providers (Google OAuth)
-app.UseForwardedHeaders(new ForwardedHeadersOptions
+var fwdOptions = new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
-});
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
+    RequireHeaderSymmetry = false,
+    ForwardLimit = null
+};
+fwdOptions.KnownNetworks.Clear();
+fwdOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(fwdOptions);
 
 app.UseHttpsRedirection();
+app.UseCookiePolicy(new CookiePolicyOptions
+{
+    MinimumSameSitePolicy = SameSiteMode.None,
+    Secure = CookieSecurePolicy.Always
+});
 app.UseCors("AllowReactApp");
 app.UseAuthentication();
 app.UseAuthorization();
