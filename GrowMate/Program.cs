@@ -23,6 +23,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.HttpOverrides;
 using System.Security.Claims;
 using System.Text;
 
@@ -189,6 +190,12 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+
+// Ensure correct scheme/host behind Azure's reverse proxy for external providers (Google OAuth)
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor
+});
 
 app.UseHttpsRedirection();
 app.UseCors("AllowReactApp");
