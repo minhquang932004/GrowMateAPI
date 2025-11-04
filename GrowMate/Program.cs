@@ -87,8 +87,14 @@ var authBuilder = builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    // Explicit sign-in scheme for external providers
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 })
-.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, cookieOptions =>
+{
+    cookieOptions.Cookie.SameSite = SameSiteMode.None;
+    cookieOptions.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+})
 .AddJwtBearer(options =>
 {
     var key = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is not configured.");
@@ -121,6 +127,10 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
         options.ClientSecret = googleClientSecret;
         options.CallbackPath = "/api/auth/google-callback"; // align with your controller route if enabled
         options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
+        // Ensure correlation cookie works cross-site behind HTTPS
+        options.CorrelationCookie.SameSite = SameSiteMode.None;
+        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
 
         //Thêm 2 scope này
         options.Scope.Add("email");
