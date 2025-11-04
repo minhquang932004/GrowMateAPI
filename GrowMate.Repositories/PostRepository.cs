@@ -34,7 +34,8 @@ namespace GrowMate.Repositories
             if (includeCollections)
             {
                 q = q.Include(p => p.Media)
-                     .Include(p => p.PostComments);
+                     .Include(p => p.PostComments)
+                     .Include(p => p.TreeListing);
             }
 
             return await q.AsNoTracking().FirstOrDefaultAsync(p => p.PostId == id, ct);

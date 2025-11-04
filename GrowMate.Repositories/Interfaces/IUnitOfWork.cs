@@ -16,6 +16,7 @@
         IAdoptionRepository Adoptions { get; }
         ITreeRepository Trees { get; }
         IPaymentRepository Payments { get; }
+        IMonthlyReportRepository MonthlyReports { get; }
 
         Task<int> SaveChangesAsync(CancellationToken ct = default);
         Task ExecuteInTransactionAsync(Func<CancellationToken, Task> action, CancellationToken ct = default);

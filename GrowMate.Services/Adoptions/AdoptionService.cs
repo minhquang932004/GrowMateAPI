@@ -13,6 +13,7 @@ namespace GrowMate.Services.Adoptions
         Task<PageResult<CustomerAdoptionResponse>> GetFarmerAdoptionsAsync(int farmerId, int page, int pageSize, CancellationToken ct = default);
         Task<PageResult<CustomerAdoptionResponse>> GetAllAdoptionsAsync(int page, int pageSize, CancellationToken ct = default);
         Task<PageResult<CustomerAdoptionResponse>> GetByOrderIdAsync(int orderId, int page, int pageSize, CancellationToken ct = default);
+        Task<PageResult<CustomerAdoptionResponse>> GetAdoptionByPostIdAsync(int postId, int page, int pageSize, CancellationToken ct = default);
         Task<CustomerAdoptionResponse?> GetAdoptionByIdAsync(int adoptionId, CancellationToken ct = default);
         Task<CustomerAdoptionResponse?> GetAdoptionDetailAsync(int adoptionId, CancellationToken ct = default);
         Task<AuthResponse> CreateAdoptionAsync(CreateAdoptionRequest request, CancellationToken ct = default);
@@ -53,6 +54,12 @@ namespace GrowMate.Services.Adoptions
         public async Task<PageResult<CustomerAdoptionResponse>> GetByOrderIdAsync(int orderId, int page, int pageSize, CancellationToken ct = default)
         {
             var adoptions = await _unitOfWork.Adoptions.GetByOrderIdAsync(orderId, page, pageSize, ct);
+            return await MapAdoptionsToResponseAsync(adoptions, ct);
+        }
+
+        public async Task<PageResult<CustomerAdoptionResponse>> GetAdoptionByPostIdAsync(int postId, int page, int pageSize, CancellationToken ct = default)
+        {
+            var adoptions = await _unitOfWork.Adoptions.GetByPostIdAsync(postId, page, pageSize, ct);
             return await MapAdoptionsToResponseAsync(adoptions, ct);
         }
 
@@ -227,7 +234,8 @@ namespace GrowMate.Services.Adoptions
                 PricePerYear = adoption.Tree.Listing.PricePerTree,
                 Years = years, // Sử dụng trường mới
                 TotalPrice = totalPrice,
-                PostCode = adoption.Tree.UniqueCode // Sử dụng PostCode từ Tree thay vì Listing
+                PostCode = adoption.Tree.Listing.PostCode, // Sử dụng PostCode từ Tree thay vì Listing
+                PostId = adoption.Tree.Listing.PostId // Thêm PostId vào response
             };
         }
     }

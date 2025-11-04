@@ -8,6 +8,7 @@ using GrowMate.Services.Customers;
 using GrowMate.Services.EmailRegister;
 using GrowMate.Services.Farmers;
 using GrowMate.Services.Media;
+using GrowMate.Services.MonthlyReports;
 using GrowMate.Services.Orders;
 using GrowMate.Services.Payments;
 using GrowMate.Services.Posts;
@@ -52,6 +53,7 @@ builder.Services.AddScoped<IAdoptionRepository, AdoptionRepository>();
 builder.Services.AddScoped<ITreeRepository, TreeRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<ICartItemRepository, CartItemRepository>();
+builder.Services.AddScoped<IMonthlyReportRepository, MonthlyReportRepository>();
 
 // DbContext for EF Core tools and runtime
 builder.Services.AddDbContext<EXE201_GrowMateContext>(options =>
@@ -76,6 +78,7 @@ builder.Services.AddScoped<IAdoptionService, AdoptionService>();
 builder.Services.AddScoped<ITreeService, TreeService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IMonthlyReportService, MonthlyReportService>();
 
 
 // AuthN/Z

@@ -3,6 +3,7 @@ using GrowMate.Contracts.Requests.Post;  // Add domain-specific namespace for Po
 using GrowMate.Contracts.Responses;
 using GrowMate.Contracts.Responses.Auth;  // Add domain-specific namespace for Auth responses
 using GrowMate.Contracts.Responses.Post;  // Add domain-specific namespace for Post responses
+using GrowMate.Contracts.Responses.Tree;  // Add TreeListingResponse
 using GrowMate.Models;
 using GrowMate.Repositories.Extensions;
 using GrowMate.Repositories.Interfaces;
@@ -189,6 +190,21 @@ namespace GrowMate.Services.Posts
             var post = await _unitOfWork.Posts.GetByIdAsync(id, includeCollections: true, ct);
             if (post == null) return null;
 
+            // Map TreeListing if available - simplified version without redundant fields
+            TreeListingSummaryResponse? treeListingResponse = null;
+            if (post.TreeListing != null)
+            {
+                treeListingResponse = new TreeListingSummaryResponse
+                {
+                    ListingId = post.TreeListing.ListingId,
+                    TotalQuantity = post.TreeListing.TotalQuantity,
+                    AvailableQuantity = post.TreeListing.AvailableQuantity,
+                    Status = post.TreeListing.Status,
+                    CreatedAt = post.TreeListing.CreatedAt,
+                    UpdatedAt = post.TreeListing.UpdatedAt
+                };
+            }
+
             return new PostResponse
             {
                 PostId = post.PostId,
@@ -225,7 +241,9 @@ namespace GrowMate.Services.Posts
                     CreatedAt = c.CreatedAt,
                     UpdatedAt = c.UpdatedAt
                 }).ToList() ?? new List<PostCommentResponse>(),
-                MainImageUrl = post.Media?.FirstOrDefault(m => m.IsPrimary)?.MediaUrl ?? post.Media?.FirstOrDefault()?.MediaUrl
+                PostCode = post.PostCode,
+                MainImageUrl = post.Media?.FirstOrDefault(m => m.IsPrimary)?.MediaUrl ?? post.Media?.FirstOrDefault()?.MediaUrl,
+                TreeListing = treeListingResponse
             };
         }
 

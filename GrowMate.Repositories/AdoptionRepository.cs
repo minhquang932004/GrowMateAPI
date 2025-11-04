@@ -62,6 +62,24 @@ namespace GrowMate.Repositories
             return await query.ToPagedResultAsync(page, pageSize, ct);
         }
 
+        public async Task<PageResult<Adoption>> GetByPostIdAsync(int postId, int page, int pageSize, CancellationToken ct = default)
+        {
+            var query = _db.Adoptions
+                .AsNoTracking()
+                .Include(a => a.Tree)
+                .ThenInclude(t => t.Listing)
+                .ThenInclude(l => l.Post)
+                .Include(a => a.Tree)
+                .ThenInclude(t => t.Listing)
+                .ThenInclude(l => l.Farmer)
+                .Include(a => a.Customer)
+                .ThenInclude(c => c.User)
+                .Where(a => a.Tree.Listing.PostId == postId)
+                .OrderByDescending(a => a.CreatedAt);
+
+            return await query.ToPagedResultAsync(page, pageSize, ct);
+        }
+
         public async Task<PageResult<Adoption>> GetAllAsync(int page, int pageSize, CancellationToken ct = default)
         {
             var query = _db.Adoptions
