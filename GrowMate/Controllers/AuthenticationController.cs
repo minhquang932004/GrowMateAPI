@@ -122,15 +122,33 @@ namespace GrowMateWebAPIs.Controllers
                 var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 if (!result.Succeeded)
                 {
-                    return Unauthorized("Đăng nhập Google thất bại");
+                    // Fallback to Google scheme in case cookie scheme didn't capture the external principal
+                    result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+                    if (!result.Succeeded)
+                    {
+                        return Unauthorized("Đăng nhập Google thất bại");
+                    }
                 }
 
-                var email = result.Principal.FindFirstValue(ClaimTypes.Email);
-                var name = result.Principal.FindFirstValue(ClaimTypes.Name);
-                var picture = result.Principal.FindFirstValue("pictures");
+                var email = result.Principal?.FindFirstValue(ClaimTypes.Email);
+                var name = result.Principal?.FindFirstValue(ClaimTypes.Name);
+
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    return BadRequest("Không thể lấy email từ Google");
+                }
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    name = email;
+                }
 
                 var user = await _loginService.LoginWithGoogle(email, name, ct);
-                var redirectUrl = $"https://www.growmate.site?Token={user.Token}";// hardcode FE, will change later
+                if (user == null || !user.Success || string.IsNullOrWhiteSpace(user.Token))
+                {
+                    return BadRequest(user?.Message ?? "Đăng nhập Google thất bại");
+                }
+
+                var redirectUrl = $"https://www.growmate.site?Token={user.Token}"; // FE domain
 
                 Response.Cookies.Append("Token", user.Token, new CookieOptions
                 {
