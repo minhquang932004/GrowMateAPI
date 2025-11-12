@@ -191,12 +191,13 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+var dataProtectionPath = Environment.GetEnvironmentVariable("HOME") != null
+    ? Path.Combine(Environment.GetEnvironmentVariable("HOME")!, "ASP.NET", "DataProtection-Keys")
+    : Path.Combine(builder.Environment.ContentRootPath, "DataProtection-Keys");
+
 builder.Services.AddDataProtection()
     .SetApplicationName("GrowMate")
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(
-        builder.Environment.ContentRootPath,
-        "DataProtection-Keys"
-    )));
+    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
 
 builder.Services.AddCors(options =>
 {
