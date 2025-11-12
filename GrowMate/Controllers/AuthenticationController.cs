@@ -18,7 +18,10 @@ namespace GrowMateWebAPIs.Controllers
         private readonly ILoginService _loginService;
         private readonly IPasswordResetService _passwordResetService;
 
-        public AuthenticationController(IRegisterService registerService, ILoginService loginService, IPasswordResetService passwordResetService)
+        public AuthenticationController(
+            IRegisterService registerService, 
+            ILoginService loginService, 
+            IPasswordResetService passwordResetService)
         {
             _registerService = registerService;
             _loginService = loginService;
@@ -151,7 +154,7 @@ namespace GrowMateWebAPIs.Controllers
                     return BadRequest(user?.Message ?? "Đăng nhập Google thất bại");
                 }
 
-                var redirectUrl = $"https://www.growmate.site/googleCallback?token={Uri.EscapeDataString(user.Token)}";
+                var redirectUrl = $"https://www.growmate.site/google-callback?token={Uri.EscapeDataString(user.Token)}";
 
                 Response.Cookies.Append("Token", user.Token, new CookieOptions
                 {

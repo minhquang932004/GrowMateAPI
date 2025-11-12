@@ -24,6 +24,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.DataProtection;
 using System.Security.Claims;
 using System.Text;
 
@@ -93,7 +94,10 @@ var authBuilder = builder.Services.AddAuthentication(options =>
 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, cookieOptions =>
 {
     cookieOptions.Cookie.SameSite = SameSiteMode.None;
-    cookieOptions.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    cookieOptions.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
+    cookieOptions.Cookie.Path = "/";
 })
 .AddJwtBearer(options =>
 {
@@ -125,22 +129,32 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
     {
         options.ClientId = googleClientId;
         options.ClientSecret = googleClientSecret;
-        options.CallbackPath = "/api/auth/google-callback"; // align with your controller route if enabled
+        options.CallbackPath = "/api/auth/google-callback";
         options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 
-        // Ensure correlation cookie works cross-site behind HTTPS
         options.CorrelationCookie.SameSite = SameSiteMode.None;
-        options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.CorrelationCookie.SecurePolicy = builder.Environment.IsDevelopment()
+            ? CookieSecurePolicy.SameAsRequest
+            : CookieSecurePolicy.Always;
+        options.CorrelationCookie.Path = "/";
+        options.CorrelationCookie.HttpOnly = true;
 
-        //Thêm 2 scope này
         options.Scope.Add("email");
         options.Scope.Add("profile");
 
-        // Đảm bảo lấy đúng các claim
         options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "sub");
         options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
         options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
         options.ClaimActions.MapJsonKey("picture", "picture");
+
+        options.Events.OnRemoteFailure = context =>
+        {
+            var error = context.Failure?.Message ?? "Unknown error";
+            var feUrl = "https://www.growmate.site/login?error=" + Uri.EscapeDataString(error);
+            context.Response.Redirect(feUrl);
+            context.HandleResponse();
+            return Task.CompletedTask;
+        };
     });
 }
 
@@ -177,6 +191,13 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddDataProtection()
+    .SetApplicationName("GrowMate")
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(
+        builder.Environment.ContentRootPath,
+        "DataProtection-Keys"
+    )));
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
@@ -201,7 +222,6 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 
-// Ensure correct scheme/host behind Azure's reverse proxy for external providers (Google OAuth)
 var fwdOptions = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedFor,
@@ -216,7 +236,9 @@ app.UseHttpsRedirection();
 app.UseCookiePolicy(new CookiePolicyOptions
 {
     MinimumSameSitePolicy = SameSiteMode.None,
-    Secure = CookieSecurePolicy.Always
+    Secure = app.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always
 });
 app.UseCors("AllowReactApp");
 app.UseAuthentication();
