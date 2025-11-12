@@ -16,6 +16,7 @@ using GrowMate.Services.Products;
 using GrowMate.Services.TreeListings;
 using GrowMate.Services.Trees;
 using GrowMate.Services.Users;
+using GrowMateWebAPIs;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -82,6 +83,8 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IMonthlyReportService, MonthlyReportService>();
 
+builder.Services.Configure<GoogleOAuthOptions>(builder.Configuration.GetSection("Google"));
+builder.Services.AddHttpClient();
 
 // AuthN/Z
 var authBuilder = builder.Services.AddAuthentication(options =>
