@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
@@ -168,7 +169,16 @@ namespace GrowMateWebAPIs.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Đăng nhập Google thất bại: {ex.Message}");
+                var errorMessage = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $" | InnerException: {ex.InnerException.Message}";
+                }
+                if (!string.IsNullOrWhiteSpace(ex.StackTrace))
+                {
+                    errorMessage += $" | StackTrace: {ex.StackTrace.Split('\n').FirstOrDefault()}";
+                }
+                return StatusCode(500, $"Đăng nhập Google thất bại: {errorMessage}");
             }
         }
 
@@ -264,7 +274,8 @@ namespace GrowMateWebAPIs.Controllers
             var response = await client.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
             {
-                return null;
+                var errorContent = await response.Content.ReadAsStringAsync(ct);
+                throw new Exception($"Google token exchange failed (Status: {response.StatusCode}): {errorContent}");
             }
 
             using var stream = await response.Content.ReadAsStreamAsync(ct);

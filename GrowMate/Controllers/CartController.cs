@@ -63,6 +63,7 @@ namespace GrowMate.Controllers
             return Ok(response);
         }
 
+
         /// <summary>
         /// Add a product to the customer's cart.
         /// </summary>
