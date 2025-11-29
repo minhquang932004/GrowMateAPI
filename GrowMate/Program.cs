@@ -29,6 +29,7 @@ using Microsoft.AspNetCore.DataProtection;
 using System.Security.Claims;
 using System.Text;
 
+Environment.SetEnvironmentVariable("DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER", "0");
 var builder = WebApplication.CreateBuilder(args);
 
 // In development, load sensitive configuration from a separate secrets file.

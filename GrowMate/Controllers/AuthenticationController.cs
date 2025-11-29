@@ -23,17 +23,20 @@ namespace GrowMateWebAPIs.Controllers
         private readonly ILoginService _loginService;
         private readonly IPasswordResetService _passwordResetService;
         private readonly GoogleOAuthOptions _googleOptions;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         public AuthenticationController(
             IRegisterService registerService,
             ILoginService loginService,
             IPasswordResetService passwordResetService,
-            IOptions<GoogleOAuthOptions> googleOptions)
+            IOptions<GoogleOAuthOptions> googleOptions,
+            IHttpClientFactory httpClientFactory)
         {
             _registerService = registerService;
             _loginService = loginService;
             _passwordResetService = passwordResetService;
             _googleOptions = googleOptions.Value;
+            _httpClientFactory = httpClientFactory;
         }
 
         /// <summary>
@@ -251,7 +254,7 @@ namespace GrowMateWebAPIs.Controllers
 
         private async Task<GoogleTokenResponse?> ExchangeCodeForTokensAsync(string code, CancellationToken ct)
         {
-            using var client = new HttpClient();
+            var client = _httpClientFactory.CreateClient();
             client.Timeout = TimeSpan.FromSeconds(30);
 
             using var content = new FormUrlEncodedContent(new Dictionary<string, string>
