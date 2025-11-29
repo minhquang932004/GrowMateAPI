@@ -85,6 +85,9 @@ builder.Services.AddScoped<IMonthlyReportService, MonthlyReportService>();
 
 builder.Services.Configure<GoogleOAuthOptions>(builder.Configuration.GetSection("Google"));
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient(nameof(AuthenticationController))
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler())
+    .SetHandlerLifetime(TimeSpan.FromMinutes(5));
 
 // AuthN/Z
 var authBuilder = builder.Services.AddAuthentication(options =>
