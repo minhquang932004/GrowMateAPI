@@ -254,7 +254,8 @@ namespace GrowMateWebAPIs.Controllers
 
         private async Task<GoogleTokenResponse?> ExchangeCodeForTokensAsync(string code, CancellationToken ct)
         {
-            var client = _httpClientFactory.CreateClient(nameof(AuthenticationController));
+            using var client = new HttpClient();
+            client.Timeout = TimeSpan.FromSeconds(30);
 
             using var content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
