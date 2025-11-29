@@ -22,20 +22,17 @@ namespace GrowMateWebAPIs.Controllers
         private readonly IRegisterService _registerService;
         private readonly ILoginService _loginService;
         private readonly IPasswordResetService _passwordResetService;
-        private readonly IHttpClientFactory _httpClientFactory;
         private readonly GoogleOAuthOptions _googleOptions;
 
         public AuthenticationController(
             IRegisterService registerService,
             ILoginService loginService,
             IPasswordResetService passwordResetService,
-            IHttpClientFactory httpClientFactory,
             IOptions<GoogleOAuthOptions> googleOptions)
         {
             _registerService = registerService;
             _loginService = loginService;
             _passwordResetService = passwordResetService;
-            _httpClientFactory = httpClientFactory;
             _googleOptions = googleOptions.Value;
         }
 
