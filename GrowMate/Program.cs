@@ -29,6 +29,7 @@ using Microsoft.AspNetCore.DataProtection;
 using System.Security.Claims;
 using System.Text;
 
+AppContext.SetSwitch("System.Net.Http.UseSocketsHttpHandler", false);
 Environment.SetEnvironmentVariable("DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER", "0");
 var builder = WebApplication.CreateBuilder(args);
 
