@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
@@ -24,19 +25,22 @@ namespace GrowMateWebAPIs.Controllers
         private readonly IPasswordResetService _passwordResetService;
         private readonly GoogleOAuthOptions _googleOptions;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ILogger<AuthenticationController> _logger;
 
         public AuthenticationController(
             IRegisterService registerService,
             ILoginService loginService,
             IPasswordResetService passwordResetService,
             IOptions<GoogleOAuthOptions> googleOptions,
-            IHttpClientFactory httpClientFactory)
+            IHttpClientFactory httpClientFactory,
+            ILogger<AuthenticationController> logger)
         {
             _registerService = registerService;
             _loginService = loginService;
             _passwordResetService = passwordResetService;
             _googleOptions = googleOptions.Value;
             _httpClientFactory = httpClientFactory;
+            _logger = logger;
         }
 
         /// <summary>
@@ -130,6 +134,7 @@ namespace GrowMateWebAPIs.Controllers
 
             if (string.IsNullOrWhiteSpace(_googleOptions.ClientId) || string.IsNullOrWhiteSpace(_googleOptions.ClientSecret))
             {
+                _logger.LogError("Google OAuth config missing at runtime.");
                 return StatusCode(500, "Google OAuth chưa được cấu hình.");
             }
 
@@ -138,6 +143,7 @@ namespace GrowMateWebAPIs.Controllers
                 var tokens = await ExchangeCodeForTokensAsync(request.Code, ct);
                 if (tokens is null || string.IsNullOrWhiteSpace(tokens.IdToken))
                 {
+                    _logger.LogWarning("Google token exchange returned no id_token for code (truncated): {CodePreview}", request.Code?.Substring(0, Math.Min(8, request.Code.Length)));
                     return BadRequest("Không đổi được token từ Google.");
                 }
 
@@ -165,10 +171,17 @@ namespace GrowMateWebAPIs.Controllers
             }
             catch (InvalidJwtException ex)
             {
+                _logger.LogWarning(ex, "Invalid JWT from Google");
                 return BadRequest($"Token Google không hợp lệ: {ex.Message}");
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Network error while exchanging Google code");
+                return StatusCode(502, $"Network error contacting Google: {ex.Message}");
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Unhandled error during Google login");
                 var errorMessage = ex.Message;
                 if (ex.InnerException != null)
                 {
@@ -254,43 +267,54 @@ namespace GrowMateWebAPIs.Controllers
 
         private async Task<GoogleTokenResponse?> ExchangeCodeForTokensAsync(string code, CancellationToken ct)
         {
-            var client = _httpClientFactory.CreateClient();
-            client.Timeout = TimeSpan.FromSeconds(30);
-
-            using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+            try
             {
-                ["code"] = code,
-                ["client_id"] = _googleOptions.ClientId,
-                ["client_secret"] = _googleOptions.ClientSecret,
-                ["redirect_uri"] = "postmessage",
-                ["grant_type"] = "authorization_code"
-            });
+                var client = _httpClientFactory.CreateClient();
+                client.Timeout = TimeSpan.FromSeconds(30);
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "https://oauth2.googleapis.com/token")
-            {
-                Content = content
-            };
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    ["code"] = code,
+                    ["client_id"] = _googleOptions.ClientId,
+                    ["client_secret"] = _googleOptions.ClientSecret,
+                    ["redirect_uri"] = "postmessage",
+                    ["grant_type"] = "authorization_code"
+                });
 
-            var response = await client.SendAsync(request, ct);
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorContent = await response.Content.ReadAsStringAsync(ct);
-                throw new Exception($"Google token exchange failed (Status: {response.StatusCode}): {errorContent}");
+                var request = new HttpRequestMessage(HttpMethod.Post, "https://oauth2.googleapis.com/token")
+                {
+                    Content = content
+                };
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                var response = await client.SendAsync(request, ct);
+                var body = await response.Content.ReadAsStringAsync(ct);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Google token exchange failed (Status: {Status}) Body: {Body}", response.StatusCode, body);
+                    throw new HttpRequestException($"Google token exchange failed (Status: {response.StatusCode}): {body}");
+                }
+
+                using var stream = await response.Content.ReadAsStreamAsync(ct);
+                var json = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+
+                if (!json.RootElement.TryGetProperty("id_token", out var idTokenElement))
+                {
+                    _logger.LogWarning("Google token response doesn't contain id_token. Body: {Body}", body);
+                    return null;
+                }
+
+                return new GoogleTokenResponse
+                {
+                    IdToken = idTokenElement.GetString() ?? string.Empty
+                };
             }
-
-            using var stream = await response.Content.ReadAsStreamAsync(ct);
-            var json = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
-
-            if (!json.RootElement.TryGetProperty("id_token", out var idTokenElement))
+            catch (Exception ex)
             {
-                return null;
+                _logger.LogError(ex, "ExchangeCodeForTokensAsync failed");
+                throw;
             }
-
-            return new GoogleTokenResponse
-            {
-                IdToken = idTokenElement.GetString() ?? string.Empty
-            };
         }
 
         private sealed class GoogleTokenResponse
