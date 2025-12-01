@@ -23,7 +23,7 @@ namespace GrowMate.Services.Payments
         Task<AuthResponse> UpdatePaymentAsync(int paymentId, UpdatePaymentRequest request, CancellationToken ct = default);
         Task<AuthResponse> UpdatePaymentStatusAsync(int paymentId, UpdatePaymentStatusRequest request, CancellationToken ct = default);
         Task<AuthResponse> DeletePaymentAsync(int paymentId, CancellationToken ct = default);
-        Task<PaymentQrResponse> CreateSepayQrAsync(int orderId, int? expiresMinutes = 10, CancellationToken ct = default);
+        Task<PaymentQrResponse> CreateSepayQrAsync(int orderId, decimal amount, int? expiresMinutes = 10, CancellationToken ct = default);
         Task<AuthResponse> ProcessSepayWebhookAsync(string authorizationHeader, string payloadJson, CancellationToken ct = default);
     }
 
@@ -46,7 +46,7 @@ namespace GrowMate.Services.Payments
             return await MapPaymentsToResponseAsync(payments, ct);
         }
 
-        public async Task<PaymentQrResponse> CreateSepayQrAsync(int orderId, int? expiresMinutes = 10, CancellationToken ct = default)
+        public async Task<PaymentQrResponse> CreateSepayQrAsync(int orderId, decimal amount, int? expiresMinutes = 10, CancellationToken ct = default)
         {
             // Load order
             var order = await _unitOfWork.Orders.GetByIdAsync(orderId);
@@ -55,12 +55,23 @@ namespace GrowMate.Services.Payments
                 throw new InvalidOperationException($"Không tìm thấy orderId: {orderId}");
             }
 
+            // Validate and clamp amount: min 20000, max 50000
+            if (amount < 20000m)
+            {
+                amount = 20000m;
+            }
+            else if (amount > 50000m)
+            {
+                amount = 50000m;
+            }
+
             // Reuse existing unexpired PENDING QR for this order (idempotent within TTL)
             var existing = await _unitOfWork.Payments.GetByOrderIdAsync(orderId, 1, 5, ct);
             var reuse = existing.Items
                 .FirstOrDefault(p => string.Equals(p.Status, "PENDING", StringComparison.OrdinalIgnoreCase)
                                      && string.Equals(p.PaymentGateway, "SEPAY", StringComparison.OrdinalIgnoreCase)
-                                     && p.ExpiresAt.HasValue && p.ExpiresAt.Value > DateTime.Now);
+                                     && p.ExpiresAt.HasValue && p.ExpiresAt.Value > DateTime.Now
+                                     && p.Amount == amount); // Also check amount matches
             if (reuse != null)
             {
                 return new PaymentQrResponse
@@ -83,9 +94,6 @@ namespace GrowMate.Services.Payments
             {
                 throw new InvalidOperationException("Thiếu cấu hình Sepay:BankCode hoặc Sepay:AccountNumber");
             }
-
-            // Fixed transfer amount for QR (VND)
-            var amount = 5000m;
             var gatewayOrderCode = $"ORD{orderId}-{Guid.NewGuid().ToString("N").Substring(0, 8)}";
             var addInfo = $"GROWMATE-{gatewayOrderCode}";
             var expiresAt = DateTime.Now.AddMinutes(expiresMinutes ?? 10);
