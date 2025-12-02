@@ -5,6 +5,7 @@ using GrowMate.Contracts.Responses.Payment;
 using GrowMate.Contracts.Responses.Auth;
 using GrowMate.Repositories.Interfaces;
 using GrowMate.Repositories.Extensions;
+using GrowMate.Repositories.Models.Statuses;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
@@ -230,6 +231,7 @@ namespace GrowMate.Services.Payments
 
                 await _unitOfWork.ExecuteInTransactionAsync(async innerCt =>
                 {
+                    // Đánh dấu payment đã thanh toán thành công
                     payment.Status = "SUCCESS";
                     payment.PaidAt = DateTime.Now;
                     // Lưu Sepay transaction reference để idempotency (theo khuyến nghị của Sepay)
@@ -250,14 +252,23 @@ namespace GrowMate.Services.Payments
                     payment.GatewayRawPayload = payloadJson;
 
                     _unitOfWork.Payments.Update(payment);
-                    await _unitOfWork.SaveChangesAsync(innerCt);
 
-                    // Load order with items if needed
+                    // Load order và cập nhật trạng thái nếu có OrderId
                     var order = await _unitOfWork.Orders.GetByIdAsync(payment.OrderId ?? 0);
                     if (order != null)
                     {
+                        // Cập nhật trạng thái thanh toán và đơn hàng
+                        order.PaymentStatus = PaymentStatuses.Completed;
+                        order.Status = OrderStatuses.Completed;
+                        order.UpdatedAt = DateTime.Now;
+
+                        _unitOfWork.Orders.Update(order);
+
+                        // Tạo adoption/tree sau khi đơn đã được thanh toán thành công
                         await CreateAdoptionsAndTreesFromOrderAsync(order, innerCt);
                     }
+
+                    await _unitOfWork.SaveChangesAsync(innerCt);
                 }, ct);
 
                 return new AuthResponse { Success = true, Message = "Ghi nhận thanh toán thành công." };
