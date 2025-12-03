@@ -161,7 +161,7 @@ namespace GrowMate.Services.Orders
                         var orderItem = new OrderItem
                         {
                             ProductId = null, // Null for tree items (will be made nullable in DB)
-                            ProductName = null, // Null for tree items (will be made nullable in DB)
+                            ProductName = post.ProductName, // Store ProductName from Post for tree items
                             UnitPrice = 0, // Required field - not used for trees
                             Quantity = 0, // Required field - not used for trees
                             TotalPrice = null, // Null for tree items (will be made nullable in DB)

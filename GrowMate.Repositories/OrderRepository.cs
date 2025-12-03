@@ -15,7 +15,12 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
     {
         return await _context.Orders
             .Include(o => o.OrderItems)
-            .ThenInclude(oi => oi.Product)
+                .ThenInclude(oi => oi.Product)
+                    .ThenInclude(p => p.Media)
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Listing)
+                    .ThenInclude(l => l.Post)
+                        .ThenInclude(p => p.Media)
             .FirstOrDefaultAsync(o => o.OrderId == orderId);
     }
 
@@ -24,6 +29,12 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
         return await _context.Orders
             .Where(o => o.CustomerId == customerId)
             .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+                    .ThenInclude(p => p.Media)
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Listing)
+                    .ThenInclude(l => l.Post)
+                        .ThenInclude(p => p.Media)
             .OrderByDescending(o => o.CreatedAt)  // Using CreatedAt instead of OrderDate based on the model
             .ToListAsync();
     }

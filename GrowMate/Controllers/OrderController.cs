@@ -300,7 +300,7 @@ namespace GrowMate.Controllers
                             OrderItemId = item.OrderItemId,
                             OrderId = item.OrderId,
                             ListingId = item.ListingId.Value,
-                            ProductName = item.Listing?.Post?.ProductName ?? "Unknown Tree",
+                            ProductName = item.ProductName ?? item.Listing?.Post?.ProductName ?? "Unknown Tree",
                             ProductType = post?.ProductType ?? "",
                             ProductVariety = post?.ProductVariety ?? "",
                             FarmName = post?.FarmName ?? "",
