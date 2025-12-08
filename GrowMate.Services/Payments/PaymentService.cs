@@ -493,8 +493,13 @@ namespace GrowMate.Services.Payments
                 var treeQuantity = orderItem.TreeQuantity.Value;
                 var years = orderItem.TreeYears ?? 1;
 
-                // Lấy listing một lần để dùng xuyên suốt
-                var listing = await _unitOfWork.TreeListings.GetByIdAsync(listingId, includeTrees: false, ct);
+                // Ưu tiên dùng Listing đã được include cùng Order để tránh double tracking
+                var listing = orderItem.Listing;
+                if (listing == null)
+                {
+                    // Fallback: lấy AsNoTracking từ repo (repo đã AsNoTracking)
+                    listing = await _unitOfWork.TreeListings.GetByIdAsync(listingId, includeTrees: false, ct);
+                }
 
                 // Tạo tree cho từng cây được thuê
                 for (int i = 0; i < treeQuantity; i++)
