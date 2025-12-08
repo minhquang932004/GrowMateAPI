@@ -533,6 +533,11 @@ namespace GrowMate.Services.Payments
                     }
 
                     // Tạo adoption cho tree vừa tạo
+                    // Chọn ảnh ưu tiên từ media của post
+                    var primaryMedia = listing?.Post?.Media?.FirstOrDefault(m => m.IsPrimary) ??
+                                       listing?.Post?.Media?.FirstOrDefault();
+                    var primaryImageUrl = primaryMedia?.MediaUrl ?? "";
+
                     var adoption = new Models.Adoption
                     {
                         CustomerId = order.CustomerId,
@@ -544,7 +549,7 @@ namespace GrowMate.Services.Payments
                         OrderId = order.OrderId,
                         ProductName = listing?.Post?.ProductName ?? "Unknown Product",
                         Years = years,
-                        PrimaryImageUrl = "",
+                        PrimaryImageUrl = primaryImageUrl ?? "",
                         CreatedAt = DateTime.Now
                     };
 

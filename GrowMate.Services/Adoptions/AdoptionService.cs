@@ -209,7 +209,14 @@ namespace GrowMate.Services.Adoptions
         private async Task<CustomerAdoptionResponse> MapAdoptionToResponseAsync(Models.Adoption adoption, CancellationToken ct)
         {
             // Sử dụng các trường mới từ Adoption thay vì JOIN
-            var primaryImageUrl = adoption.PrimaryImageUrl ?? "";
+            // Lấy ảnh ưu tiên: dữ liệu lưu trong Adoption -> Media primary của Post -> Media đầu tiên
+            var primaryImageUrl = adoption.PrimaryImageUrl;
+            if (string.IsNullOrWhiteSpace(primaryImageUrl))
+            {
+                var primaryMedia = adoption.Tree.Listing.Post?.Media?.FirstOrDefault(m => m.IsPrimary) ??
+                                   adoption.Tree.Listing.Post?.Media?.FirstOrDefault();
+                primaryImageUrl = primaryMedia?.MediaUrl ?? "";
+            }
             var years = adoption.Years;
             var totalPrice = adoption.Tree.Listing.PricePerTree * years;
 
