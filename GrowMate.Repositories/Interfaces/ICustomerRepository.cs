@@ -11,6 +11,7 @@ namespace GrowMate.Repositories.Interfaces
     public interface ICustomerRepository
     {
         Task<Customer?> GetByUserIdAsync(int userId, CancellationToken ct = default);
+        Task<Customer?> GetByCustomerIdAsync(int customerId, CancellationToken ct = default);
         Task<bool> AnyAsync(int userId, CancellationToken ct = default);
         Task CreateAsync(Customer customer, CancellationToken ct = default);
         Task Remove(Customer customer);

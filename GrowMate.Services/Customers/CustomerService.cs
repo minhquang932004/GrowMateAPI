@@ -30,6 +30,9 @@ namespace GrowMate.Services.Customers
         public async Task<Customer> GetCustomerDetailsByIdAsync(int id, CancellationToken ct) => await _unitOfWork.Customers.GetByUserIdAsync(id, ct)
             ?? throw new KeyNotFoundException($"Customer with UserId {id} not found.");
 
+        public async Task<Customer> GetCustomerDetailsByCustomerIdAsync(int customerId, CancellationToken ct) => await _unitOfWork.Customers.GetByCustomerIdAsync(customerId, ct)
+            ?? throw new KeyNotFoundException($"Customer with CustomerId {customerId} not found.");
+
         public async Task RemoveByUserIdAsync(int userId, CancellationToken ct)
         {
             var customer = await _unitOfWork.Customers.GetByUserIdAsync(userId, ct);
