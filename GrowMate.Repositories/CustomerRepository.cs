@@ -18,6 +18,9 @@ namespace GrowMate.Repositories
         public Task<Customer?> GetByUserIdAsync(int userId, CancellationToken ct = default)
             => _dbContext.Customers.FirstOrDefaultAsync(c => c.UserId == userId, ct);
 
+        public Task<Customer?> GetByCustomerIdAsync(int customerId, CancellationToken ct = default)
+            => _dbContext.Customers.FirstOrDefaultAsync(c => c.CustomerId == customerId, ct);
+
         public Task<bool> AnyAsync(int userId, CancellationToken ct = default)
             => _dbContext.Customers.AnyAsync(c => c.UserId == userId, ct);
 

@@ -222,8 +222,8 @@ namespace GrowMate.Controllers
             string sellerName = "Unknown Seller";
             try
             {
-                // Get customer name
-                var customer = _customerService.GetCustomerDetailsByIdAsync(order.CustomerId, HttpContext.RequestAborted).Result;
+                // Get customer name - use GetCustomerDetailsByCustomerIdAsync to get Customer by CustomerId (not UserId)
+                var customer = _customerService.GetCustomerDetailsByCustomerIdAsync(order.CustomerId, HttpContext.RequestAborted).Result;
                 if (customer != null)
                 {
                     var user = _userService.GetUserByIdAsync(customer.UserId, false, HttpContext.RequestAborted).Result;
